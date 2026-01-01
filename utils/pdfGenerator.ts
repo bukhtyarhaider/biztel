@@ -515,6 +515,11 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
     doc.text(`Page ${i} of ${pageCount}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
   }
 
+  // Get year from first transaction's earning month for filename
+  const reportYear = transactions.length > 0 && transactions[0].earningMonth
+    ? new Date(transactions[0].earningMonth).getFullYear()
+    : new Date().getFullYear();
+
   // Save the PDF
-  doc.save(`${companyName.replace(/\s+/g, '_')}_Annual_Report_${new Date().getFullYear()}.pdf`);
+  doc.save(`${companyName.replace(/\s+/g, '_')}_Annual_Report_${reportYear}.pdf`);
 };

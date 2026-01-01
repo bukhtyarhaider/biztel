@@ -94,6 +94,7 @@ const transformJSONRow = (row: any, index: number): Transaction => {
   };
 
   // Extract values using exact column names from template
+  const year = getRowValue(row, 'Year'); // e.g., "2023", "2024"
   const earningMonth = getRowValue(row, 'Month'); // e.g., "April", "May", "June"
   const releaseDate = getRowValue(row, 'Release'); // e.g., "May,23"
   const receivedDate = getRowValue(row, 'Received'); // e.g., "May,30"
@@ -111,12 +112,37 @@ const transformJSONRow = (row: any, index: number): Transaction => {
   const capitalPKR = getRowValue(row, 'Capital(Rs)', 'Capital (Rs)');
   const status = getRowValue(row, 'status', 'Status');
 
-  // Parse dates from "May,23" format
-  const releaseDateISO = parseDateValue(releaseDate);
-  const receivedDateISO = receivedDate && receivedDate !== '-' ? parseDateValue(receivedDate) : null;
+  // Helper to parse dates from "May,23" format with year
+  const parseDate = (dateStr: string, yearVal: string): string => {
+    if (!dateStr || dateStr === '-') return new Date().toISOString();
+    
+    const currentYear = yearVal || new Date().getFullYear().toString();
+    
+    // Handle "May,23" format -> "May 23, 2023"
+    if (dateStr.includes(',')) {
+      const [month, day] = dateStr.split(',').map(s => s.trim());
+      const fullDate = new Date(`${month} ${day}, ${currentYear}`);
+      if (!isNaN(fullDate.getTime())) {
+        return fullDate.toISOString();
+      }
+    }
+    
+    // Fallback to standard parsing
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime()) ? date.toISOString() : new Date().toISOString();
+  };
+
+  // Parse dates from "May,23" format with year
+  const releaseDateISO = parseDate(releaseDate, year);
+  const receivedDateISO = receivedDate && receivedDate !== '-' ? parseDate(receivedDate, year) : null;
   
-  // Convert month name to ISO date format (e.g., "April" → "2024-04-01")
-  const earningMonthISO = parseEarningMonth(earningMonth, releaseDateISO);
+  // Convert month name to ISO date format using the Year column
+  // e.g., "April" + "2023" → "2023-04-01"
+  const earningYear = year || new Date(releaseDateISO).getFullYear().toString();
+  const earningMonthDate = new Date(`${earningMonth} 1, ${earningYear}`);
+  const earningMonthISO = !isNaN(earningMonthDate.getTime()) 
+    ? earningMonthDate.toISOString() 
+    : releaseDateISO;
 
   return {
     id: `txn-${Date.now()}-${index}`,
