@@ -1,8 +1,3 @@
-/**
- * Auth Context
- * Provides authentication state and methods throughout the app
- */
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
@@ -40,85 +35,142 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  const activeFetchRef = React.useRef<{ id: string, promise: Promise<Profile | null> } | null>(null);
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-      return data as Profile;
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      return null;
+  const fetchProfile = async (userId: string) => {
+    // Return existing promise if already fetching for this user
+    if (activeFetchRef.current && activeFetchRef.current.id === userId) {
+        return activeFetchRef.current.promise;
     }
+
+    const fetchPromise = (async () => {
+        try {
+          
+          const queryPromise = supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+          );
+
+          // Race against 5s timeout
+          const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+          if (error) {
+            console.error('Error fetching profile:', error);
+            // If error is timeout or connection, maybe we should return null but NOT cache it as "done" if we want to retry?
+            // For now, let's return null.
+            return null;
+          }
+          return data as Profile;
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+          return null;
+        } finally {
+           // Clear cache when done? Or keep it?
+           // If we keep it, we won't refetch on subsequent calls (like sign in after session check).
+           // But if we want to support 'refreshProfile', we need to be able to bypass this.
+           // However, for the initial load storm, we want to cache.
+           if (activeFetchRef.current?.id === userId) {
+               activeFetchRef.current = null;
+           }
+        }
+    })();
+
+    activeFetchRef.current = { id: userId, promise: fetchPromise };
+    return fetchPromise;
   };
 
   const refreshProfile = async () => {
     if (user) {
+       // Force new fetch by clearing ref
+       if (activeFetchRef.current?.id === user.id) {
+           activeFetchRef.current = null;
+       }
       const profile = await fetchProfile(user.id);
       setProfile(profile);
     }
   };
 
   useEffect(() => {
-    // Flag to prevent state updates after unmount
     let mounted = true;
     
-    const initAuth = async () => {
+    // Safety timeout to prevent infinite loading
+    // Increased to 8000ms to allow for the 5000ms profile fetch timeout to resolve first
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timed out after 8000ms. Forcing loading=false.');
+        setLoading(false);
+      }
+    }, 8000);
+
+    const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Add a race condition check - if timeout happens first, we still want to set data but not toggle loading if already done
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
         
         if (!mounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
+
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          
+          const profile = await fetchProfile(initialSession.user.id);
+          if (mounted) setProfile(profile);
+        } else {
+          // If no session, we are done loading
           if (mounted) {
-            setProfile(profile);
+             setLoading(false);
+             clearTimeout(safetyTimeout);
           }
         }
       } catch (error) {
-        console.error('Auth init error:', error);
+        console.error('Auth initialization error:', error);
       } finally {
         if (mounted) {
-          setLoading(false);
+           setLoading(false);
+           clearTimeout(safetyTimeout);
         }
       }
     };
 
-    initAuth();
+    initializeAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
+        // Always sync session/user state
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          if (mounted) {
-            setProfile(profile);
-          }
-        } else {
+        if (event === 'SIGNED_OUT') {
+          activeFetchRef.current = null;
           setProfile(null);
+          setLoading(false);
+          clearTimeout(safetyTimeout);
+        } else if (session?.user) {
+           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+             const profile = await fetchProfile(session.user.id);
+             if (mounted) {
+               setProfile(profile);
+               setLoading(false);
+             }
+           }
+        } else if (event === 'INITIAL_SESSION' && !session) {
+           setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -134,7 +186,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
       
-      // Log activity
       await supabase.from('activity_logs').insert({
         action: 'login',
         entity_type: 'auth',
@@ -163,16 +214,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
 
-      // Create profile (triggered by DB trigger, but we'll do it here as backup)
       if (data.user) {
         await supabase.from('profiles').upsert({
           id: data.user.id,
           email: email,
           full_name: fullName,
-          role: 'client' // Default role
+          role: 'client'
         });
         
-        // Log activity
         await supabase.from('activity_logs').insert({
           user_id: data.user.id,
           action: 'signup',
@@ -188,7 +237,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
-    // Log activity before signing out
     if (user) {
       await supabase.from('activity_logs').insert({
         user_id: user.id,

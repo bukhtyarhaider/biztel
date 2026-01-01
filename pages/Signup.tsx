@@ -1,18 +1,11 @@
-/**
- * Signup Page
- */
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, UserPlus, AlertCircle, CheckCircle, Mail, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-interface SignupProps {
-  onSwitchToLogin: () => void;
-}
-
-const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
+const Signup: React.FC = () => {
   const { signUp } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -60,9 +53,11 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
           <p className="text-slate-600 mb-6">
             Please check your email to verify your account, then sign in.
           </p>
-          <Button onClick={onSwitchToLogin} className="w-full">
-            Go to Login
-          </Button>
+          <Link to="/login">
+            <Button className="w-full">
+                Go to Login
+            </Button>
+          </Link>
         </Card>
       </div>
     );
@@ -166,12 +161,12 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
         <div className="mt-6 text-center">
           <p className="text-slate-600">
             Already have an account?{' '}
-            <button
-              onClick={onSwitchToLogin}
+            <Link
+              to="/login"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Sign in
-            </button>
+            </Link>
           </p>
         </div>
       </Card>

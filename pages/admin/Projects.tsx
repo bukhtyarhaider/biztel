@@ -5,32 +5,33 @@ import {
   Plus, 
   Search, 
   Building2, 
-  Users, 
   Trash2, 
   RefreshCw,
   ChevronRight,
   ArrowLeft,
   Settings,
-  Shield // Changed from Users to avoid confusion
+  Shield
 } from 'lucide-react';
 import { Project } from '../../types/database';
 import { projectService } from '../../services/projectService';
+import { createReport } from '../../services/reportService';
+import { syncWithGoogleSheet } from '../../services/googleSheetsService';
 import { formatCurrency } from '../../constants';
 import { EditProjectModal } from '../../components/admin/EditProjectModal';
 import { ManageAccessModal } from '../../components/admin/ManageAccessModal';
+import CreateReportModal, { CreateReportData } from '../../components/CreateReportModal';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface AdminProjectsProps {
-  onBack: () => void;
-  onSelectProject: (project: Project) => void;
-  onCreateNew: () => void;
-}
-
-const AdminProjects: React.FC<AdminProjectsProps> = ({ onBack, onSelectProject, onCreateNew }) => {
+const AdminProjects: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Modal states
+  const [isCreating, setIsCreating] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [accessProject, setAccessProject] = useState<Project | null>(null);
 
@@ -50,7 +51,8 @@ const AdminProjects: React.FC<AdminProjectsProps> = ({ onBack, onSelectProject, 
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm('Are you sure you want to delete this project?')) return;
     
     try {
@@ -72,6 +74,71 @@ const AdminProjects: React.FC<AdminProjectsProps> = ({ onBack, onSelectProject, 
     }
   };
 
+  const handleCreateReport = async (data: CreateReportData) => {
+    try {
+      if (data.mode === 'upload') {
+        if (!data.file) {
+          alert('No file provided');
+          return;
+        }
+        
+        // Parse file and get transactions
+        // Note: Using 'createReport' service which processes the file locally
+        // We really only need the parsed transactions here
+        const newReport = await createReport(data.file, { companyName: data.companyName });
+        if (newReport) {
+          // Save to Supabase
+          try {
+            const created = await projectService.create({
+              company_name: data.companyName,
+              transactions: newReport.transactions,
+              created_by: user?.id
+            });
+            // Update local state
+            setProjects([created, ...projects]);
+          } catch (dbError) {
+            console.error('Error saving to database:', dbError);
+            alert('Failed to save project to database');
+          }
+          
+          setIsCreating(false);
+        } else {
+          alert('Failed to parse report file');
+        }
+      } else {
+        if (!data.sheetUrl) {
+          alert('No Google Sheets URL provided');
+          return;
+        }
+
+        const result = await syncWithGoogleSheet(data.sheetUrl);
+        
+        if (result.success && result.transactions) {
+          // Save to Supabase
+          try {
+            const created = await projectService.create({
+              company_name: data.companyName,
+              sheet_url: data.sheetUrl,
+              transactions: result.transactions,
+              created_by: user?.id
+            });
+            
+            setProjects([created, ...projects]);
+            setIsCreating(false);
+          } catch (dbError: any) {
+            console.error('Error saving to database:', dbError);
+            alert(`Failed to save project: ${dbError?.message || 'Unknown error'}`);
+          }
+        } else {
+          alert(`Failed to sync with Google Sheets: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating report:', error);
+      alert('Failed to create report. Please try again.');
+    }
+  };
+
   const calculateTotalNet = (transactions: any[]) => {
     return transactions?.reduce((sum, t) => sum + (t.netUsd || 0), 0) || 0;
   };
@@ -84,14 +151,14 @@ const AdminProjects: React.FC<AdminProjectsProps> = ({ onBack, onSelectProject, 
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
           <p className="text-slate-500">{projects.length} total projects</p>
         </div>
-        <Button onClick={onCreateNew} className="gap-2">
+        <Button onClick={() => setIsCreating(true)} className="gap-2">
           <Plus className="w-5 h-5" />
           New Project
         </Button>
@@ -126,89 +193,98 @@ const AdminProjects: React.FC<AdminProjectsProps> = ({ onBack, onSelectProject, 
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
-            <Card 
+            <Link
               key={project.id}
-              onClick={() => onSelectProject(project)}
-              className="hover:shadow-lg transition-all cursor-pointer group relative"
+              to={`/report/${project.id}`}
+              className="block group relative"
             >
-              {/* Actions */}
-              <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-white/90 p-1 rounded-lg backdrop-blur-sm border border-slate-100 shadow-sm">
-                 <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Manage Access"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAccessProject(project);
-                  }}
-                  className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  <Shield className="w-4 h-4" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Edit Project"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingProject(project);
-                  }}
-                  className="h-8 w-8 hover:bg-slate-100 hover:text-slate-900"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
+              <Card className="hover:shadow-lg transition-all h-full">
+                {/* Actions - Prevent Link navigation when clicking buttons */}
+                <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-white/90 p-1 rounded-lg backdrop-blur-sm border border-slate-100 shadow-sm">
+                   <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Manage Access"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setAccessProject(project);
+                    }}
+                    className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    <Shield className="w-4 h-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Edit Project"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditingProject(project);
+                    }}
+                    className="h-8 w-8 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
 
-                <div className="w-px h-4 bg-slate-200 my-auto mx-1" />
+                  <div className="w-px h-4 bg-slate-200 my-auto mx-1" />
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Delete Project"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(project.id);
-                  }}
-                  className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors pr-16 bg-white">
-                      {project.company_name}
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      {project.transactions?.length || 0} transactions
-                    </p>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Delete Project"
+                    onClick={(e) => handleDelete(project.id, e)}
+                    className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">Net Revenue</p>
-                    <p className="text-lg font-bold text-slate-900">
-                      {formatCurrency(calculateTotalNet(project.transactions), 'USD')}
-                    </p>
+                <div className="p-6">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors pr-16 bg-white">
+                        {project.company_name}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {project.transactions?.length || 0} transactions
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-400 group-hover:text-blue-600 transition-colors">
-                    <span className="text-sm">View Report</span>
-                    <ChevronRight className="w-4 h-4" />
+
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider">Net Revenue</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatCurrency(calculateTotalNet(project.transactions), 'USD')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-400 group-hover:text-blue-600 transition-colors">
+                      <span className="text-sm">View Report</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
 
       {/* Modals */}
+      {isCreating && (
+        <CreateReportModal
+          isOpen={isCreating}
+          onClose={() => setIsCreating(false)}
+          onCreate={handleCreateReport}
+        />
+      )}
+
       <EditProjectModal
         isOpen={!!editingProject}
         onClose={() => setEditingProject(null)}

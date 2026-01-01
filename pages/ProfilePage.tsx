@@ -1,8 +1,3 @@
-/**
- * Profile Page
- * View and update profile, see assigned project access
- */
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -22,12 +17,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { Project, ProjectAccess } from '../types/database';
 import { projectService } from '../services/projectService';
+import { useNavigate } from 'react-router-dom';
 
-interface ProfilePageProps {
-  onBack: () => void;
-}
-
-const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
+const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, profile, isAdmin, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [saving, setSaving] = useState(false);
@@ -43,7 +36,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
   useEffect(() => {
     if (user && !isAdmin) {
-      // Load assigned projects for clients
       projectService.getForUser(user.id)
         .then(setProjects)
         .catch(console.error)
@@ -80,7 +72,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>

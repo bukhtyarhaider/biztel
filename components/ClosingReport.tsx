@@ -6,10 +6,22 @@ import { FileText, Calculator, Landmark, CheckCircle2, Download, Printer, Loader
 interface ClosingReportProps {
   data: Transaction[];
   companyName: string;
+  canDownload?: boolean;
 }
 
-const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName }) => {
+const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDownload = false }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // ... (calculations)
+  // These lines are outside the replacement chunk so I don't need to copy them if I target specifically.
+  // Actually, I need to update the props interface and the component signature first.
+  // Then the button rendering. 
+  // Since replace_file_content handles single block, I will do it in two steps or a multi_replace?
+  // Multi replace is better.
+  
+  // Wait, I can't put my logic in the tool call description.
+  // I will use multi_replace for ClosingReport.
+
 
   // 1. Calculate Total Fiscal Expected Revenue (May 23 - Jan 25)
   const totalExpectedUSD = data.reduce((acc, curr) => acc + curr.expectedUsd, 0);
@@ -98,21 +110,25 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName }) => {
           </div>
           
           <div className="flex gap-3 no-print" data-html2canvas-ignore="true">
-            <button 
-              onClick={handleDownloadCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>CSV</span>
-            </button>
-            <button 
-              onClick={handleGeneratePDF}
-              disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-              <span>Generate Professional Report</span>
-            </button>
+            {canDownload && (
+              <>
+                <button 
+                  onClick={handleDownloadCSV}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>CSV</span>
+                </button>
+                <button 
+                  onClick={handleGeneratePDF}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                  <span>Generate Professional Report</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 

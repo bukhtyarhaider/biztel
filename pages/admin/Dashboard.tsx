@@ -1,11 +1,8 @@
-/**
- * Admin Dashboard
- * Central hub for admins to manage projects and users
- */
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { useNavigate } from 'react-router-dom';
+import { userService } from '../../services/userService';
 import { 
   FolderKanban, 
   Users, 
@@ -15,37 +12,39 @@ import {
   Clock
 } from 'lucide-react';
 
-interface AdminDashboardProps {
-  onNavigate: (page: 'projects' | 'users' | 'activity') => void;
-  stats: {
-    projectCount: number;
-    userCount: number;
-    recentActivity: number;
-  };
-}
+const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ projectCount: 0, userCount: 0, recentActivity: 0 });
+  const [loading, setLoading] = useState(true);
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) => {
+  useEffect(() => {
+    userService.getDashboardStats()
+      .then(data => setStats(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const quickStats = [
     {
       title: 'Total Projects',
       value: stats.projectCount,
       icon: <FolderKanban className="w-6 h-6" />,
       color: 'bg-blue-500',
-      onClick: () => onNavigate('projects')
+      path: '/admin/projects'
     },
     {
       title: 'Total Users',
       value: stats.userCount,
       icon: <Users className="w-6 h-6" />,
       color: 'bg-green-500',
-      onClick: () => onNavigate('users')
+      path: '/admin/users'
     },
     {
       title: 'Recent Activity',
       value: stats.recentActivity,
       icon: <Activity className="w-6 h-6" />,
       color: 'bg-purple-500',
-      onClick: () => onNavigate('activity')
+      path: '/admin/activity'
     }
   ];
 
@@ -57,7 +56,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
           <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
           <p className="text-slate-500 mt-1">Manage your projects and users</p>
         </div>
-        <Button onClick={() => onNavigate('projects')} className="gap-2">
+        <Button onClick={() => navigate('/admin/projects')} className="gap-2">
           <Plus className="w-5 h-5" />
           New Project
         </Button>
@@ -68,7 +67,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
         {quickStats.map((stat, index) => (
           <Card 
             key={index}
-            onClick={stat.onClick}
+            onClick={() => navigate(stat.path)}
             className="p-6 cursor-pointer hover:shadow-lg transition-all group"
           >
             <div className="flex items-start justify-between">
@@ -78,7 +77,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
               <ArrowUpRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
             </div>
             <div className="mt-4">
-              <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+              <p className="text-3xl font-bold text-slate-900">{loading ? '-' : stat.value}</p>
               <p className="text-slate-500 mt-1">{stat.title}</p>
             </div>
           </Card>
@@ -89,7 +88,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
       <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card 
-          onClick={() => onNavigate('projects')}
+          onClick={() => navigate('/admin/projects')}
           className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
         >
           <div className="p-3 bg-blue-100 rounded-xl">
@@ -102,7 +101,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
         </Card>
 
         <Card 
-          onClick={() => onNavigate('users')}
+          onClick={() => navigate('/admin/users')}
           className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
         >
           <div className="p-3 bg-green-100 rounded-xl">
@@ -115,7 +114,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate, stats }) =>
         </Card>
 
         <Card 
-          onClick={() => onNavigate('activity')}
+          onClick={() => navigate('/admin/activity')}
           className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
         >
           <div className="p-3 bg-purple-100 rounded-xl">

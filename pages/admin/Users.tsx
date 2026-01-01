@@ -1,8 +1,3 @@
-/**
- * Admin Users Page
- * User management and access control
- */
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -14,17 +9,14 @@ import {
   RefreshCw,
   ArrowLeft,
   Mail,
-  Calendar,
-  FolderKanban
+  Calendar
 } from 'lucide-react';
 import { Profile } from '../../types/database';
 import { userService } from '../../services/userService';
+import { useNavigate } from 'react-router-dom';
 
-interface AdminUsersProps {
-  onBack: () => void;
-}
-
-const AdminUsers: React.FC<AdminUsersProps> = ({ onBack }) => {
+const AdminUsers: React.FC = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,7 +62,7 @@ const AdminUsers: React.FC<AdminUsersProps> = ({ onBack }) => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">

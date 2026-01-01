@@ -1,8 +1,3 @@
-/**
- * Admin Activity Logs Page
- * View all user activity
- */
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -21,10 +16,7 @@ import {
 } from 'lucide-react';
 import { ActivityLog } from '../../types/database';
 import { userService } from '../../services/userService';
-
-interface AdminActivityProps {
-  onBack: () => void;
-}
+import { useNavigate } from 'react-router-dom';
 
 const getActivityIcon = (action: string) => {
   switch (action) {
@@ -53,7 +45,8 @@ const formatAction = (action: string) => {
   ).join(' ');
 };
 
-const AdminActivity: React.FC<AdminActivityProps> = ({ onBack }) => {
+const AdminActivity: React.FC = () => {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<(ActivityLog & { user?: { email: string; full_name: string } })[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,7 +85,7 @@ const AdminActivity: React.FC<AdminActivityProps> = ({ onBack }) => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">

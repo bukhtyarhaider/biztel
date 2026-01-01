@@ -18,9 +18,11 @@ interface ReportDetailProps {
   report: Report;
   onBack: () => void;
   onReportUpdate: (updates: Partial<Report>) => void;
+  canDownload?: boolean;
+  isAdmin?: boolean;
 }
 
-const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpdate }) => {
+const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpdate, canDownload = false, isAdmin = false }) => {
   const data = report.transactions;
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   
@@ -66,67 +68,73 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
           Back to Dashboard
         </Button>
         
-        {/* Sync Controls - Only for sheet-sourced reports */}
-        {report.source === 'sheet' && (
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
-              {report.sheetUrl && (
-                <div className="mt-2">
-                  <SyncStatusBadge
-                    status={syncStatus}
-                    lastSyncedAt={lastSyncedAt}
-                    error={syncError}
-                  />
-                </div>
-              )}
-            </div>
+        {/* Header Section */}
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
             
+            {/* Show sync status only to admins if sheet connected */}
+            {isAdmin && report.source === 'sheet' && report.sheetUrl && (
+              <div className="mt-2">
+                <SyncStatusBadge
+                  status={syncStatus}
+                  lastSyncedAt={lastSyncedAt}
+                  error={syncError}
+                />
+              </div>
+            )}
+            
+            {!isAdmin && (
+               <p className="text-sm text-slate-500 mt-1">Fiscal Year 2024-2025</p>
+            )}
+
+            {/* Upload message only if upload source */}
+            {report.source === 'upload' && (
+               <p className="text-sm text-slate-500 mt-1">View-only report from uploaded file</p>
+            )}
+          </div>
+          
+          {/* Admin Controls */}
+          {isAdmin && (
             <div className="flex items-center gap-3">
-              {report.sheetUrl ? (
-                <>
-                  <Button
-                    onClick={handleSync}
-                    disabled={isLoading}
-                    className="gap-2"
-                    variant="outline"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    {isLoading ? 'Syncing...' : 'Sync Now'}
-                  </Button>
+              {report.source === 'sheet' ? (
+                report.sheetUrl ? (
+                  <>
+                    <Button
+                      onClick={handleSync}
+                      disabled={isLoading}
+                      className="gap-2"
+                      variant="outline"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      {isLoading ? 'Syncing...' : 'Sync Now'}
+                    </Button>
+                    <Button
+                      onClick={() => setIsLinkModalOpen(true)}
+                      variant="ghost"
+                      size="icon"
+                      title="Sync Settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
                   <Button
                     onClick={() => setIsLinkModalOpen(true)}
-                    variant="ghost"
-                    size="icon"
-                    title="Sync Settings"
+                    className="gap-2"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Link2 className="w-4 h-4" />
+                    Link Google Sheet
                   </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => setIsLinkModalOpen(true)}
-                  className="gap-2"
-                >
-                  <Link2 className="w-4 h-4" />
-                  Link Google Sheet
-                </Button>
-              )}
+                )
+              ) : null}
             </div>
-          </div>
-        )}
-        
-        {/* Title for uploaded reports */}
-        {report.source === 'upload' && (
-          <div className="mt-4">
-            <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
-            <p className="text-sm text-slate-500 mt-1">View-only report from uploaded file</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="mb-8" id="report-content">
-         <ClosingReport data={data} companyName={report.companyName} />
+         <ClosingReport data={data} companyName={report.companyName} canDownload={canDownload} />
       </div>
 
       {/* Key Metrics Grid */}

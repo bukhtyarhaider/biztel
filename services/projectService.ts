@@ -139,7 +139,7 @@ export const projectService = {
         project_id: projectId,
         user_id: userId,
         ...permissions
-      })
+      }, { onConflict: 'project_id, user_id' })
       .select()
       .single();
 

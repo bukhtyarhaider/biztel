@@ -1,19 +1,13 @@
-/**
- * Login Page
- */
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
-interface LoginProps {
-  onSwitchToSignup: () => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
+const Login: React.FC = () => {
   const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,9 +22,20 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
 
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else {
+      // Navigation handled by PublicRoute or AuthContext state change usually
+      // But explicit navigation is safer if relying on route protection
+      // We'll let the router redirect based on auth state if configured,
+      // Or we can manually navigate.
+      // Since Routes will redirect logged in users, we might just let it happen.
+      // But explicit is better.
+      // Actually, AuthContext doesn't know about router.
+      // The App routing logic redirects if user is present.
+      // But that happens on render.
+      // So we can navigate to '/' and let the root redirector handle it.
+      navigate('/');
     }
-
-    setLoading(false);
   };
 
   return (
@@ -101,12 +106,12 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
         <div className="mt-6 text-center">
           <p className="text-slate-600">
             Don't have an account?{' '}
-            <button
-              onClick={onSwitchToSignup}
+            <Link
+              to="/signup"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Sign up
-            </button>
+            </Link>
           </p>
         </div>
       </Card>
