@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biztel</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+    integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    /* Keep PDF Export Specific Styles for now as they seem critical for specific feature */
+    .pdf-export-active {
+      background-color: white !important;
+      width: 1200px !important;
+      margin: 0 auto !important;
+      padding: 20px !important;
+    }
+
+    .pdf-export-active .overflow-x-auto {
+      overflow: visible !important;
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .pdf-export-active table {
+      width: 100% !important;
+      white-space: nowrap;
+    }
+
+    .pdf-export-active .no-print-pdf {
+      display: none !important;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+
+      body {
+        background-color: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .break-inside-avoid {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+  <!-- CSS is imported by Vite in index.tsx, but some older setups might need this. 
+         Since we imported in index.tsx, we don't strictly need link rel=stylesheet here for dev 
+         but it's good for prod preview if built without JS inserting it? 
+         Actually Vite handles it. 
+         I will remove the direct link to /index.css as it might double load or fail if not in public. -->
+
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
