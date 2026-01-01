@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Header from '../components/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -15,6 +15,36 @@ interface DashboardProps {
   onCreateReport: () => void;
   onDeleteReport: (id: string) => void;
 }
+
+// Helper to calculate date range from report transactions
+const getReportDateRange = (report: Report): string => {
+  if (!report.transactions || report.transactions.length === 0) {
+    return 'No Data';
+  }
+
+  const timestamps = report.transactions
+    .map(t => {
+      // Prioritize earningMonth, fallback to releaseDate or date
+      const dateStr = t.earningMonth || t.releaseDate || t.date;
+      if (!dateStr || dateStr === 'Unknown') return 0;
+      return new Date(dateStr).getTime();
+    })
+    .filter(ts => ts > 0 && !isNaN(ts));
+
+  if (timestamps.length === 0) return 'No Date Range';
+
+  const minDate = new Date(Math.min(...timestamps));
+  const maxDate = new Date(Math.max(...timestamps));
+
+  const startMonth = minDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const endMonth = maxDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  if (startMonth === endMonth) {
+    return startMonth;
+  }
+
+  return `${startMonth} - ${endMonth}`;
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ 
   reports, 
@@ -67,6 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reports.map((report) => {
             const totalNet = calculateTotalNet(report.transactions);
+            const dateRange = getReportDateRange(report);
             
             return (
               <Card 
@@ -106,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   </h3>
                   <p className="text-sm text-slate-500 mb-6 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    2024-2025 Fiscal Year
+                    {dateRange}
                   </p>
                   
                   <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
