@@ -82,13 +82,13 @@ const validateIncomeSheetStructure = (data: any[]): boolean => {
  * @returns Transaction object
  */
 const transformJSONRow = (row: any, index: number): Transaction => {
-  // Helper to extract numeric value from strings like "Rs46,458", "$164.88", or "3.77%"
+  // Helper to extract numeric value from strings like "Rs46,458", "$164.88", "3.77%", or "USD 123"
   const extractNumber = (val: string | number): number => {
     if (typeof val === 'number') return val;
     if (!val) return 0;
     
-    // Remove currency symbols, commas, percent signs, and "Rs" prefix
-    const cleaned = String(val).replace(/[Rs$,%]/g, '').trim();
+    // Remove all non-numeric characters except decimal point and minus sign
+    const cleaned = String(val).replace(/[^0-9.-]/g, '');
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : num;
   };
@@ -98,13 +98,17 @@ const transformJSONRow = (row: any, index: number): Transaction => {
   const earningMonth = getRowValue(row, 'Month'); // e.g., "April", "May", "June"
   const releaseDate = getRowValue(row, 'Release'); // e.g., "May,23"
   const receivedDate = getRowValue(row, 'Received'); // e.g., "May,30"
+  
+  // Debug log for raw values
+  // console.log(`Processing row ${index}:`, { year, earningMonth, releaseDate, receivedDate });
+
   const durationDays = getRowValue(row, 'Day(s)', 'Days');
   const platform = getRowValue(row, 'Platform');
   const method = getRowValue(row, 'Method');
   const rate = getRowValue(row, 'Rate');
   const revenueUSD = getRowValue(row, 'Revenue ($)');
   const revenuePKR = getRowValue(row, 'Revenue (Rs)');
-  const receivedPKR = getRowValue(row, 'Received'); // Second "Received" column
+  const receivedPKR = getRowValue(row, 'Received'); // Second "Received" column risk (name collision)
   const taxUSD = getRowValue(row, 'Tax($)', 'Tax ($)');
   const taxPKR = getRowValue(row, 'Tax(Rs)', 'Tax (Rs)');
   const taxPercent = getRowValue(row, 'Tax(%)', 'Tax (%)');
@@ -112,18 +116,24 @@ const transformJSONRow = (row: any, index: number): Transaction => {
   const capitalPKR = getRowValue(row, 'Capital(Rs)', 'Capital (Rs)');
   const status = getRowValue(row, 'status', 'Status');
 
-  // Helper to parse dates from "May,23" format with year
+  // Helper to parse dates from "May,23" or "May,30" format with year
   const parseDate = (dateStr: string, yearVal: string): string => {
-    if (!dateStr || dateStr === '-') return new Date().toISOString();
+    if (!dateStr || dateStr === '-' || dateStr === 'Unknown') return new Date().toISOString();
     
+    // Use provided year or current year fallback
     const currentYear = yearVal || new Date().getFullYear().toString();
     
     // Handle "May,23" format -> "May 23, 2023"
+    // Also handles "12-Sep" or similar if they occur
     if (dateStr.includes(',')) {
-      const [month, day] = dateStr.split(',').map(s => s.trim());
-      const fullDate = new Date(`${month} ${day}, ${currentYear}`);
-      if (!isNaN(fullDate.getTime())) {
-        return fullDate.toISOString();
+      const parts = dateStr.split(',');
+      if (parts.length >= 2) {
+        const month = parts[0].trim();
+        const day = parts[1].trim();
+        const fullDate = new Date(`${month} ${day}, ${currentYear}`);
+        if (!isNaN(fullDate.getTime())) {
+          return fullDate.toISOString();
+        }
       }
     }
     
@@ -134,7 +144,22 @@ const transformJSONRow = (row: any, index: number): Transaction => {
 
   // Parse dates from "May,23" format with year
   const releaseDateISO = parseDate(releaseDate, year);
-  const receivedDateISO = receivedDate && receivedDate !== '-' ? parseDate(receivedDate, year) : null;
+  
+  // For received date, use the same year logic. 
+  // Note: if release is Dec and received is Jan, this simple logic assumes same year (bug risk for year boundary).
+  // But usually payments are within same year or we rely on 'Year' column which represents earnings year.
+  // Ideally we'd compare dates, if received < release, add 1 year.
+  let receivedDateISO = null;
+  if (receivedDate && receivedDate !== '-') {
+    receivedDateISO = parseDate(receivedDate, year);
+    
+    // Check if received date is before release date (year boundary case)
+    if (new Date(receivedDateISO) < new Date(releaseDateISO)) {
+       const d = new Date(receivedDateISO);
+       d.setFullYear(d.getFullYear() + 1);
+       receivedDateISO = d.toISOString();
+    }
+  }
   
   // Convert month name to ISO date format using the Year column
   // e.g., "April" + "2023" → "2023-04-01"
@@ -187,9 +212,8 @@ export const parseGoogleSheetsJSON = (jsonData: any[]): Transaction[] => {
       throw new Error('Sheet appears to be empty or has no valid data rows.');
     }
 
-    // Skip first row (header) and process all data rows
+    // Process all data rows (opensheet already handles headers)
     const transactions = jsonData
-      .slice(1) // Skip header row
       .filter(row => {
         // Filter out empty rows
         const values = Object.values(row);
@@ -198,9 +222,9 @@ export const parseGoogleSheetsJSON = (jsonData: any[]): Transaction[] => {
       .map((row, index) => transformJSONRow(row, index))
       .filter(txn => txn.expectedUsd > 0 || txn.netUsd > 0 || txn.expectedPkr > 0)
       .sort((a, b) => {
-        // Sort by release date chronologically (oldest first)
-        const dateA = new Date(a.releaseDate).getTime();
-        const dateB = new Date(b.releaseDate).getTime();
+        // Sort by earning date chronologically (oldest first)
+        const dateA = new Date(a.earningMonth || a.releaseDate || 0).getTime();
+        const dateB = new Date(b.earningMonth || b.releaseDate || 0).getTime();
         return dateA - dateB;
       });
 

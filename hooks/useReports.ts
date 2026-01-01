@@ -1,12 +1,14 @@
 /**
  * useReports Hook
- * Manages report state and operations
+ * Manages report state and operations with localStorage persistence
  */
 
-import { useState, useCallback, Dispatch, SetStateAction } from 'react';
+import { useState, useCallback, useEffect, Dispatch, SetStateAction } from 'react';
 import { Report } from '../types';
 import { createReport as createReportService, deleteReport as deleteReportService } from '../services/reportService';
 import { ParseOptions } from '../utils/reportParser';
+
+const STORAGE_KEY = 'intelbiz_reports';
 
 export interface UseReportsReturn {
   reports: Report[];
@@ -20,14 +22,38 @@ export interface UseReportsReturn {
 }
 
 /**
- * Custom hook for managing reports
- * @param initialReports - Initial list of reports
+ * Custom hook for managing reports with localStorage persistence
+ * @param initialReports - Initial list of reports (ignored if localStorage has data)
  * @returns Report state and operations
  */
 export const useReports = (initialReports: Report[] = []): UseReportsReturn => {
-  const [reports, setReports] = useState<Report[]>(initialReports);
+  // Initialize from localStorage or use initial reports
+  const [reports, setReports] = useState<Report[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('📂 Restored', parsed.length, 'reports from localStorage');
+        return parsed;
+      }
+    } catch (error) {
+      console.error('Failed to load reports from localStorage:', error);
+    }
+    return initialReports;
+  });
+  
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Save to localStorage whenever reports change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+      console.log('💾 Saved', reports.length, 'reports to localStorage');
+    } catch (error) {
+      console.error('Failed to save reports to localStorage:', error);
+    }
+  }, [reports]);
 
   const createReport = useCallback(async (file: File, options: ParseOptions): Promise<Report | null> => {
     setIsCreating(true);

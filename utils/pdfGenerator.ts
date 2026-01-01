@@ -131,12 +131,28 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
   doc.text('Quarterly Performance', pageWidth / 2, currentY, { align: 'center' });
   
   // Calculate quarterly data using earningMonth
+  // Calculate quarterly data using earningMonth ONLY
   const quarters: { [key: string]: { revenue: number; count: number } } = {};
+  
   transactions.forEach(t => {
-    const date = new Date(t.earningMonth || t.releaseDate);
+    // Strictly use earningMonth, fallback to releaseDate only if absolutely necessary and strictly parse it
+    let dateStr = t.earningMonth;
+    
+    // Ensure we have a valid date string
+    if (!dateStr || dateStr === 'Unknown') {
+       dateStr = t.releaseDate;
+    }
+
+    if (!dateStr) return;
+    
+    const date = new Date(dateStr);
+    
+    // Validate date
+    if (isNaN(date.getTime())) return;
+
     const year = date.getFullYear();
-    const month = date.getMonth();
-    const quarter = Math.floor(month / 3) + 1;
+    const month = date.getMonth(); // 0-11
+    const quarter = Math.floor(month / 3) + 1; // 1-4
     const quarterKey = `Q${quarter} ${year}`;
     
     if (!quarters[quarterKey]) {
