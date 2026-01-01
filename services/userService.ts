@@ -58,19 +58,36 @@ export const userService = {
     return data;
   },
 
-  // Get activity logs
-  async getActivityLogs(limit: number = 50): Promise<ActivityLog[]> {
-    const { data, error } = await supabase
+  // Get activity logs with pagination and filtering
+  async getActivityLogs(
+    page: number = 1, 
+    limit: number = 20, 
+    filter: 'all' | 'auth' | 'project' | 'user' | 'access' = 'all'
+  ): Promise<{ data: ActivityLog[], count: number }> {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
       .from('activity_logs')
       .select(`
         *,
         user:profiles (email, full_name)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    // Apply filtering based on entity_type or action prefix
+    if (filter !== 'all') {
+      if (filter === 'auth') {
+        query = query.in('action', ['login', 'logout', 'signup']);
+      } else {
+        query = query.eq('entity_type', filter);
+      }
+    }
+
+    const { data, error, count } = await query.range(from, to);
 
     if (error) throw error;
-    return data || [];
+    return { data: data as ActivityLog[], count: count || 0 };
   },
 
   // Get activity logs for a specific user

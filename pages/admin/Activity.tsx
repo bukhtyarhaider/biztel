@@ -49,22 +49,38 @@ const AdminActivity: React.FC = () => {
   const navigate = useNavigate();
   const [logs, setLogs] = useState<(ActivityLog & { user?: { email: string; full_name: string } })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [category, setCategory] = useState<'all' | 'auth' | 'project' | 'user' | 'access'>('all');
+
+  const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
     loadLogs();
-  }, []);
+  }, [page, category]);
 
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const data = await userService.getActivityLogs(100);
+      const { data, count } = await userService.getActivityLogs(page, ITEMS_PER_PAGE, category);
       setLogs(data as any);
+      setTotalItems(count);
+      setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Error loading activity logs:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const categories = [
+    { id: 'all', label: 'All Activity' },
+    { id: 'auth', label: 'Authentication' },
+    { id: 'project', label: 'Projects' },
+    { id: 'user', label: 'Users' },
+    { id: 'access', label: 'Access Control' },
+  ];
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -90,12 +106,29 @@ const AdminActivity: React.FC = () => {
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-slate-900">Activity Logs</h1>
-          <p className="text-slate-500">{logs.length} recent activities</p>
+          <p className="text-slate-500">Track system events and user actions</p>
         </div>
         <Button variant="ghost" onClick={loadLogs} className="gap-2">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { setCategory(cat.id as any); setPage(1); }}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              category === cat.id
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
       {/* Loading */}
@@ -107,49 +140,83 @@ const AdminActivity: React.FC = () => {
       ) : logs.length === 0 ? (
         <Card className="text-center py-12">
           <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900">No activity yet</h3>
-          <p className="text-slate-500 mt-1">User actions will appear here</p>
+          <h3 className="text-lg font-semibold text-slate-900">No activity found</h3>
+          <p className="text-slate-500 mt-1">Try adjusting your filters</p>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {logs.map((log) => (
-            <Card key={log.id} className="p-4">
-              <div className="flex items-center gap-4">
-                {/* Icon */}
-                <div className={`p-2 rounded-lg ${getActivityColor(log.action)}`}>
-                  {getActivityIcon(log.action)}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900">
-                      {formatAction(log.action)}
-                    </span>
-                    {log.entity_type && (
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-                        {log.entity_type}
-                      </span>
-                    )}
+        <div className="space-y-4">
+          <div className="space-y-3">
+            {logs.map((log) => (
+              <Card key={log.id} className="p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  {/* Icon */}
+                  <div className={`p-2 rounded-lg ${getActivityColor(log.action)}`}>
+                    {getActivityIcon(log.action)}
                   </div>
-                  <p className="text-sm text-slate-500">
-                    {(log as any).user?.email || 'Anonymous'} 
-                    {log.metadata && Object.keys(log.metadata).length > 0 && (
-                      <span className="ml-2 text-slate-400">
-                        • {JSON.stringify(log.metadata).slice(0, 50)}
-                      </span>
-                    )}
-                  </p>
-                </div>
 
-                {/* Time */}
-                <div className="flex items-center gap-1 text-sm text-slate-400">
-                  <Clock className="w-4 h-4" />
-                  {formatTime(log.created_at)}
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900">
+                        {formatAction(log.action)}
+                      </span>
+                      {log.entity_type && (
+                        <span className="text-xs uppercase tracking-wider font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                          {log.entity_type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500">
+                      <span className="font-medium text-slate-700">
+                        {(log as any).user?.full_name || (log as any).user?.email || 'System'}
+                      </span>
+                      {log.metadata && Object.keys(log.metadata).length > 0 && (
+                        <span className="ml-2 text-slate-400 font-mono text-xs">
+                          {JSON.stringify(log.metadata).slice(0, 60)}
+                          {JSON.stringify(log.metadata).length > 60 ? '...' : ''}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Time */}
+                  <div className="flex items-center gap-1 text-sm text-slate-400 whitespace-nowrap">
+                    <Clock className="w-3.5 h-3.5" />
+                    {formatTime(log.created_at)}
+                  </div>
                 </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+              <p className="text-sm text-slate-500">
+                Showing <span className="font-medium">{(page - 1) * ITEMS_PER_PAGE + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(page * ITEMS_PER_PAGE, totalItems)}</span> of{' '}
+                <span className="font-medium">{totalItems}</span> results
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
               </div>
-            </Card>
-          ))}
+            </div>
+          )}
         </div>
       )}
     </div>
