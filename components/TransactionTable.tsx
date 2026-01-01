@@ -1,54 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { formatCurrency } from '../constants';
 import { Transaction } from '../types';
 import { ArrowUpDown, Search, Calendar, Youtube, Video, Clock, ChevronUp, ChevronDown } from 'lucide-react';
+import { useTransactionFilter } from '../hooks/useTransactionFilter';
+import { SortKey } from '../services/transactionService';
 
 interface TransactionTableProps {
   data: Transaction[];
 }
 
-type SortKey = 'earningMonth' | 'netUsd' | 'platform' | 'status' | 'releaseDate';
-type SortDirection = 'asc' | 'desc';
-
-interface SortConfig {
-  key: SortKey;
-  direction: SortDirection;
-}
-
 const TransactionTable: React.FC<TransactionTableProps> = ({ data }) => {
-  const [filter, setFilter] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'earningMonth', direction: 'asc' });
-
-  // Filter
-  const filteredData = data.filter(t => 
-    t.platform.toLowerCase().includes(filter.toLowerCase()) || 
-    t.status.toLowerCase().includes(filter.toLowerCase()) ||
-    t.method.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  // Sort
-  const sortedData = [...filteredData].sort((a, b) => {
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-
-    if (aValue === null || aValue === undefined) return 1;
-    if (bValue === null || bValue === undefined) return -1;
-
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
-    return 0;
-  });
-
-  const handleSort = (key: SortKey) => {
-    setSortConfig(current => ({
-      key,
-      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
-    }));
-  };
+  const { filter, setFilter, sortConfig, handleSort, sortedData } = useTransactionFilter(data);
 
   const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
     if (sortConfig.key !== columnKey) return <ArrowUpDown className="w-3 h-3 text-slate-300 ml-1 inline opacity-0 group-hover:opacity-50" />;
@@ -164,7 +126,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ data }) => {
           </tbody>
         </table>
       </div>
-      {filteredData.length === 0 && (
+      {sortedData.length === 0 && (
         <div className="p-8 text-center text-slate-400">
           No transactions found matching your filter.
         </div>

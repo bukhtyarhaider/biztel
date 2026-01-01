@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Building2, Plus, History, ChevronRight, Trash2 } from 'lucide-react';
 import { Report } from '../types';
 import { formatCurrency } from '../constants';
+import { calculateTotalNet } from '../services/transactionService';
 
 interface DashboardProps {
   reports: Report[];
@@ -47,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         // Report Grid
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reports.map((report) => {
-            const totalNet = report.transactions.reduce((acc, curr) => acc + curr.netUsd, 0);
+            const totalNet = calculateTotalNet(report.transactions);
             
             return (
               <Card 

@@ -6,6 +6,7 @@ import ClosingReport from '../components/ClosingReport';
 import { Button } from '../components/ui/Button';
 import { Report } from '../types';
 import { formatCurrency } from '../constants';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { 
   Wallet, DollarSign, TrendingUp, PiggyBank, ArrowLeft 
 } from 'lucide-react';
@@ -17,14 +18,9 @@ interface ReportDetailProps {
 
 const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack }) => {
   const data = report.transactions;
-    
-  // Calculate Summary Metrics
-  const totalRevenue = data.reduce((acc, curr) => acc + curr.netUsd, 0);
-  const pendingRevenue = data.filter(t => t.status === 'Pending' || t.status === 'Expected').reduce((acc, curr) => acc + curr.netUsd, 0);
-  const receivedRevenue = data.filter(t => t.status === 'Received').reduce((acc, curr) => acc + curr.netUsd, 0);
   
-  // Calculate received PKR
-  const receivedPKR = data.filter(t => t.status === 'Received').reduce((acc, curr) => acc + curr.receivedPkr, 0);
+  // Use analytics hook for calculations
+  const { totalRevenue, pendingRevenue, receivedRevenue, receivedPKR, totalTax } = useAnalytics(data);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20">
@@ -72,7 +68,7 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack }) => {
         />
         <DashboardCard
           title="Tax Deductions"
-          value={formatCurrency(data.reduce((acc, curr) => acc + curr.taxUsd, 0), 'USD')}
+          value={formatCurrency(totalTax, 'USD')}
           subValue="Withholding tax"
           icon={<TrendingUp className="w-6 h-6 text-rose-600" />}
           colorClass="bg-rose-600/10"

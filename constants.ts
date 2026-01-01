@@ -313,14 +313,9 @@ export const TRANSACTIONS: Transaction[] = [
   status: t.status // ensure status matches string type
 })) as Transaction[];
 
-export const formatCurrency = (amount: number, currency: 'USD' | 'PKR') => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: currency === 'PKR' ? 0 : 2,
-    maximumFractionDigits: currency === 'PKR' ? 0 : 2,
-  }).format(amount);
-};
+import { formatCurrency } from './utils/formatters';
+
+export { formatCurrency };
 
 export const initialReports: Report[] = [
   {

@@ -6,16 +6,13 @@ import { cn } from '../lib/utils';
 import { Card, CardTitle } from './ui/Card';
 
 export interface CompanyInfo {
-    name: string;
+  name: string;
 }
 
 interface CreateReportModalProps {
   isOpen?: boolean;
   onClose: () => void;
-  // App.tsx uses `onCreate` but component has `onSubmit`.
-  // createReportModal props: isOpen, onClose, onSubmit.
-  // App.tsx: <CreateReportModal ... onCreate={...} />
-  // This is a mismatch!
+  onCreate: (file: File, companyInfo: CompanyInfo) => void;
 }
 
 const CreateReportModal: React.FC<CreateReportModalProps> = ({ isOpen = true, onClose, onCreate }) => {

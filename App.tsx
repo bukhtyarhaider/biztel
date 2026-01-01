@@ -1,38 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CreateReportModal, { CompanyInfo } from './components/CreateReportModal';
 import Dashboard from './pages/Dashboard';
 import ReportDetail from './pages/ReportDetail';
-import { Transaction, Report } from './types';
+import { Report } from './types';
 import { initialReports } from './constants';
-import { processFile } from './utils/reportParser';
+import { useReports } from './hooks/useReports';
 
 function App() {
-  const [reports, setReports] = useState<Report[]>(initialReports);
-  //const [filter, setFilter] = useState('All'); // Moved to Dashboard if needed, or remove if unused
+  const { reports, createReport, deleteReport, error } = useReports(initialReports);
   const [activeReport, setActiveReport] = useState<Report | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // File processing function 
-  // Moved to utils/reportParser.ts
-
   const handleCreateReport = async (file: File, companyInfo: CompanyInfo) => {
-    try {
-      const newReport = await processFile(file, { companyName: companyInfo.name });
-      setReports([newReport as Report, ...reports]);
+    const newReport = await createReport(file, { companyName: companyInfo.name });
+    
+    if (newReport) {
       setIsCreating(false);
-      setActiveReport(newReport as Report);
-    } catch (error) {
-      console.error("Error creating report:", error);
-      alert("Failed to parse the file. Please ensure it's a valid Excel file.");
+      setActiveReport(newReport);
+    } else {
+      // Error is already logged by the hook
+      alert(error || "Failed to parse the file. Please ensure it's a valid Excel file.");
     }
   };
 
   const handleDeleteReport = (id: string) => {
     if (confirm('Are you sure you want to delete this report?')) {
-        setReports(reports.filter(r => r.id !== id));
-        if (activeReport?.id === id) {
-            setActiveReport(null);
-        }
+      deleteReport(id);
+      if (activeReport?.id === id) {
+        setActiveReport(null);
+      }
     }
   };
 
