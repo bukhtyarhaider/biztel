@@ -27,6 +27,19 @@ export interface Report {
   generatedAt: string | number; // Timestamp or ISO string
   transactions: Transaction[];
   status?: 'Draft' | 'Finalized';
+  
+  // Source type - determines if report can be synced
+  source: 'upload' | 'sheet';  // 'upload' = view only, 'sheet' = can sync
+  
+  // Google Sheets Sync Fields (only for source: 'sheet')
+  sheetUrl?: string;           // Original Google Sheets URL
+  sheetId?: string;            // Extracted sheet ID  
+  sheetGid?: string;           // Sheet GID (tab ID)
+  lastSyncedAt?: string;       // ISO timestamp of last sync
+  syncStatus?: 'idle' | 'syncing' | 'success' | 'error';
+  syncError?: string;          // Error message if sync failed
+  autoSync?: boolean;          // Enable auto-sync
+  syncInterval?: number;       // Sync interval in minutes (default: 30)
 }
 
 export interface MetricCardProps {

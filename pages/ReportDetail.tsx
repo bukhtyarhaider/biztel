@@ -1,26 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardCard from '../components/DashboardCard';
 import PerformanceCharts from '../components/PerformanceCharts';
 import TransactionTable from '../components/TransactionTable';
 import ClosingReport from '../components/ClosingReport';
 import { Button } from '../components/ui/Button';
+import SyncStatusBadge from '../components/SyncStatusBadge';
+import SheetSyncModal from '../components/SheetSyncModal';
 import { Report } from '../types';
 import { formatCurrency } from '../constants';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useSheetSync } from '../hooks/useSheetSync';
 import { 
-  Wallet, DollarSign, TrendingUp, PiggyBank, ArrowLeft 
+  Wallet, DollarSign, TrendingUp, PiggyBank, ArrowLeft, RefreshCw, Link2, Settings
 } from 'lucide-react';
 
 interface ReportDetailProps {
   report: Report;
   onBack: () => void;
+  onReportUpdate: (updates: Partial<Report>) => void;
 }
 
-const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack }) => {
+const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpdate }) => {
   const data = report.transactions;
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   
   // Use analytics hook for calculations
   const { totalRevenue, pendingRevenue, receivedRevenue, receivedPKR, totalTax } = useAnalytics(data);
+  
+  // Use sheet sync hook
+  const { syncStatus, lastSyncedAt, syncError, isLoading, syncReport, linkSheet } = useSheetSync(
+    report,
+    onReportUpdate
+  );
+
+  const handleLinkSheet = async (url: string, autoSync: boolean, interval: number) => {
+    const success = await linkSheet(url);
+    if (success) {
+      // Update report with sync settings
+      onReportUpdate({
+        autoSync,
+        syncInterval: interval
+      });
+      
+      // Perform initial sync
+      await syncReport();
+    }
+    return success;
+  };
+
+  const handleSync = async () => {
+    await syncReport();
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-20">
@@ -35,6 +65,64 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack }) => {
           </div>
           Back to Dashboard
         </Button>
+        
+        {/* Sync Controls - Only for sheet-sourced reports */}
+        {report.source === 'sheet' && (
+          <div className="mt-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
+              {report.sheetUrl && (
+                <div className="mt-2">
+                  <SyncStatusBadge
+                    status={syncStatus}
+                    lastSyncedAt={lastSyncedAt}
+                    error={syncError}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {report.sheetUrl ? (
+                <>
+                  <Button
+                    onClick={handleSync}
+                    disabled={isLoading}
+                    className="gap-2"
+                    variant="outline"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    {isLoading ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+                  <Button
+                    onClick={() => setIsLinkModalOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    title="Sync Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setIsLinkModalOpen(true)}
+                  className="gap-2"
+                >
+                  <Link2 className="w-4 h-4" />
+                  Link Google Sheet
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Title for uploaded reports */}
+        {report.source === 'upload' && (
+          <div className="mt-4">
+            <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
+            <p className="text-sm text-slate-500 mt-1">View-only report from uploaded file</p>
+          </div>
+        )}
       </div>
 
       <div className="mb-8" id="report-content">
@@ -84,6 +172,18 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack }) => {
       <div className="mb-8">
         <TransactionTable data={data} />
       </div>
+
+      {/* Sheet Sync Modal - Only for sheet-sourced reports */}
+      {report.source === 'sheet' && (
+        <SheetSyncModal
+          isOpen={isLinkModalOpen}
+          onClose={() => setIsLinkModalOpen(false)}
+          onLink={handleLinkSheet}
+          initialUrl={report.sheetUrl}
+          initialAutoSync={report.autoSync}
+          initialInterval={report.syncInterval}
+        />
+      )}
     </div>
   );
 };

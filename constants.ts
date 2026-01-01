@@ -323,6 +323,7 @@ export const initialReports: Report[] = [
     companyName: 'Demo Corporation',
     generatedAt: Date.now(),
     transactions: TRANSACTIONS,
-    status: 'Finalized'
+    status: 'Finalized',
+    source: 'upload'  // Demo report is from upload
   }
 ];

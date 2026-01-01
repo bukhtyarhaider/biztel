@@ -14,6 +14,8 @@ export interface UseReportsReturn {
   error: string | null;
   createReport: (file: File, options: ParseOptions) => Promise<Report | null>;
   deleteReport: (id: string) => void;
+  updateReport: (id: string, updates: Partial<Report>) => void;
+  addReport: (report: Report) => void;
   setReports: Dispatch<SetStateAction<Report[]>>;
 }
 
@@ -49,12 +51,26 @@ export const useReports = (initialReports: Report[] = []): UseReportsReturn => {
     setReports(prev => deleteReportService(prev, id));
   }, []);
 
+  const updateReport = useCallback((id: string, updates: Partial<Report>) => {
+    setReports(prev =>
+      prev.map(report =>
+        report.id === id ? { ...report, ...updates } : report
+      )
+    );
+  }, []);
+
+  const addReport = useCallback((report: Report) => {
+    setReports(prev => [report, ...prev]);
+  }, []);
+
   return {
     reports,
     isCreating,
     error,
     createReport,
     deleteReport,
+    updateReport,
+    addReport,
     setReports
   };
 };

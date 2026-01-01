@@ -120,7 +120,8 @@ export const processFile = async (file: File, options: ParseOptions): Promise<Re
           companyName: options.companyName,
           generatedAt: new Date().toISOString(),
           transactions,
-          status: 'Draft'
+          status: 'Draft',
+          source: 'upload'  // File uploads are view-only
         };
 
         resolve(newReport);
