@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, FileText, Database } from 'lucide-react';
+import { Database, TrendingUp, PieChart, BarChart3 } from 'lucide-react';
 
 export const ProjectLoader: React.FC = () => {
-  const [text, setText] = useState('DECRYPTING ASSETS');
+  const [text, setText] = useState('LOADING PORTFOLIO');
 
   useEffect(() => {
-    const states = ['DECRYPTING ASSETS', 'FETCHING TRANSACTIONS', 'CALCULATING YIELDS', 'RENDERING DASHBOARD'];
+    const states = ['LOADING PORTFOLIO', 'RETRIEVING RECORDS', 'CALCULATING METRICS', 'PREPARING DASHBOARD'];
     let index = 0;
     
     const interval = setInterval(() => {
@@ -34,18 +34,13 @@ export const ProjectLoader: React.FC = () => {
         </p>
       </div>
 
-      {/* Hex Dump Effect Simulation */}
-      <div className="mt-8 p-4 bg-black/40 border border-white/5 rounded-lg w-64 h-32 overflow-hidden relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 z-10" />
-        <div className="font-mono text-[10px] text-emerald-500/50 leading-tight">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="flex justify-between opacity-50">
-              <span>0x{Math.random().toString(16).substr(2, 4).toUpperCase()}</span>
-              <span>{Math.random().toString(2).substr(2, 8)}</span>
-              <span>{Math.random().toString(16).substr(2, 2).toUpperCase()}</span>
-            </div>
-          ))}
-        </div>
+      {/* Financial Data Loading Simulation */}
+      <div className="mt-8 flex gap-4 opacity-50">
+        <div className="w-2 h-8 bg-emerald-500/20 rounded animate-pulse" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-12 bg-emerald-500/20 rounded animate-pulse" style={{ animationDelay: '100ms' }} />
+        <div className="w-2 h-6 bg-emerald-500/20 rounded animate-pulse" style={{ animationDelay: '200ms' }} />
+        <div className="w-2 h-10 bg-emerald-500/20 rounded animate-pulse" style={{ animationDelay: '300ms' }} />
+        <div className="w-2 h-4 bg-emerald-500/20 rounded animate-pulse" style={{ animationDelay: '400ms' }} />
       </div>
     </div>
   );

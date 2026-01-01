@@ -7,10 +7,10 @@ export const GlobalLoader: React.FC = () => {
   const [progress, setProgress] = useState(0);
 
   const messages = [
-    "INITIALIZING SECURE ENVIRONMENT...",
-    "ESTABLISHING ENCRYPTED UPLINK...",
-    "VERIFYING OPERATOR CREDENTIALS...",
-    "SYNCING MARKET DATA STREAMS...",
+    "INITIALIZING SYSTEM...",
+    "CONNECTING TO SERVER...",
+    "VERIFYING CREDENTIALS...",
+    "LOADING APPLICATION DATA...",
     "ACCESS GRANTED."
   ];
 
