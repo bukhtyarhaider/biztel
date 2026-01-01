@@ -24,6 +24,7 @@ import { Project, ProjectAccess } from '../types/database';
 import { projectService } from '../services/projectService';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [projects, setProjects] = useState<(Project & { access: ProjectAccess })[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -149,10 +151,15 @@ const ProfilePage: React.FC = () => {
                   <Lock className="w-4 h-4 text-emerald-500" />
                   <div className="text-sm">
                     <p className="text-white font-medium">Password</p>
-                    <p className="text-xs text-muted-foreground">Last changed 30d ago</p>
+                    <p className="text-xs text-muted-foreground">Secure access credential</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-white">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  className="h-7 text-xs text-muted-foreground hover:text-white"
+                >
                   UPDATE
                 </Button>
               </div>
@@ -311,6 +318,11 @@ const ProfilePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   );
 };

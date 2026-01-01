@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ProjectLoader } from '../components/ui/ProjectLoader';
 import ReportDetail from './ReportDetail';
 import { projectService } from '../services/projectService';
 import { useAuth } from '../contexts/AuthContext';
@@ -103,14 +104,7 @@ const ReportView: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading report...</p>
-        </div>
-      </div>
-    );
+    return <ProjectLoader />;
   }
 
   if (accessDenied) {
