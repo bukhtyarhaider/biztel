@@ -123,6 +123,66 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
   doc.setFont('helvetica', 'italic');
   doc.text(`Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
 
+  // Add quarterly performance preview on cover
+  currentY = 165;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+  doc.text('Quarterly Performance', pageWidth / 2, currentY, { align: 'center' });
+  
+  // Calculate quarterly data using earningMonth
+  const quarters: { [key: string]: { revenue: number; count: number } } = {};
+  transactions.forEach(t => {
+    const date = new Date(t.earningMonth || t.releaseDate);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const quarter = Math.floor(month / 3) + 1;
+    const quarterKey = `Q${quarter} ${year}`;
+    
+    if (!quarters[quarterKey]) {
+      quarters[quarterKey] = { revenue: 0, count: 0 };
+    }
+    quarters[quarterKey].revenue += t.netUsd || 0;
+    quarters[quarterKey].count += 1;
+  });
+  
+  currentY += 8;
+  const quarterBoxWidth = 42;
+  const quarterSpacing = 3;
+  const quarterKeys = Object.keys(quarters).sort().slice(-4); // Last 4 quarters, chronologically sorted
+  const quarterStartX = (pageWidth - (quarterBoxWidth * quarterKeys.length + quarterSpacing * (quarterKeys.length - 1))) / 2;
+  
+  quarterKeys.forEach((quarter, idx) => {
+    const data = quarters[quarter];
+    doc.setFillColor(247, 250, 252);
+    doc.roundedRect(quarterStartX + (quarterBoxWidth + quarterSpacing) * idx, currentY, quarterBoxWidth, 32, 2, 2, 'F');
+    
+    // Quarter label (Q1 2023)
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(quarter, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 7, { align: 'center' });
+    
+    // Month range (Apr-Jun)
+    const quarterNum = parseInt(quarter.charAt(1));
+    const quarterMonths = ['Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec'][quarterNum - 1];
+    doc.setFontSize(7);
+    doc.setTextColor(120, 120, 120);
+    doc.text(quarterMonths, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 12, { align: 'center' });
+    
+    // Revenue
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.text(formatCurrency(data.revenue, 'USD'), quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 22, { align: 'center' });
+    
+    // Transaction count
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`${data.count} txns`, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 28, { align: 'center' });
+  });
+
   // ===== PAGE 2: EXECUTIVE SUMMARY =====
   doc.addPage();
   currentY = 20;
@@ -359,6 +419,139 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
     currentY = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // ===== PAYMENT TIMING & EFFICIENCY ANALYSIS =====
+  checkPageBreak(60);
+  addSectionHeader('Payment Timing & Efficiency Analysis');
+
+  // Calculate average payment processing time
+  const paidTransactions = transactions.filter(t => t.receivedDate && t.releaseDate);
+  let avgDays = 0;
+  if (paidTransactions.length > 0) {
+    const totalDays = paidTransactions.reduce((sum, t) => {
+      const release = new Date(t.releaseDate);
+      const received = new Date(t.receivedDate!);
+      const days = Math.floor((received.getTime() - release.getTime()) / (1000 * 60 * 60 * 24));
+      return sum + days;
+    }, 0);
+    avgDays = totalDays / paidTransactions.length;
+  }
+
+  // Payment status breakdown
+  const statusBreakdown: { [key: string]: { count:number; revenue: number } } = {};
+  transactions.forEach(t => {
+    const status = t.status || 'Unknown';
+    if (!statusBreakdown[status]) statusBreakdown[status] = { count: 0, revenue: 0 };
+    statusBreakdown[status].count += 1;
+    statusBreakdown[status].revenue += t.netUsd || 0;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+  
+  const timingText = `Average payment processing time: ${avgDays.toFixed(1)} days. ${paidTransactions.length} of ${transactions.length} transactions have been cleared.`;
+  const splitTiming = doc.splitTextToSize(timingText, pageWidth - 30);
+  doc.text(splitTiming, 15, currentY);
+  currentY += splitTiming.length * 5 + 10;
+
+  // Status breakdown table
+  const statusTableData = Object.entries(statusBreakdown).map(([status, data]) => [
+    status,
+    data.count.toString(),
+    formatCurrency(data.revenue, 'USD'),
+    ((data.count / transactions.length) * 100).toFixed(1) + '%',
+    ((data.revenue / analytics.yearlyMetrics.totalNetUsd) * 100).toFixed(1) + '%'
+  ]);
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Status', 'Count', 'Total Revenue', '% of Txns', '% of Revenue']],
+    body: statusTableData,
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9
+    },
+    bodyStyles: {
+      fontSize: 9,
+      textColor: darkColor
+    },
+    alternateRowStyles: {
+      fillColor: lightGray
+    },
+    margin: { left: 15, right: 15 }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 15;
+
+  // ===== REVENUE CONCENTRATION ANALYSIS =====
+  checkPageBreak(60);
+  addSectionHeader('Revenue Concentration & Diversification');
+
+  // Platform concentration
+  const totalRevenue = analytics.yearlyMetrics.totalNetUsd;
+  const platformConcentration = analytics.platformStats.map(p => ({
+    platform: p.platform,
+    percentage: (p.totalNet / totalRevenue) * 100
+  })).sort((a, b) => b.percentage - a.percentage);
+
+  const top3Revenue = platformConcentration.slice(0, 3).reduce((sum, p) => sum + p.percentage, 0);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  const concentrationText = `Top 3 platforms account for ${top3Revenue.toFixed(1)}% of total revenue. ${platformConcentration.length} platforms contribute to revenue stream.`;
+  const splitConcentration = doc.splitTextToSize(concentrationText, pageWidth - 30);
+  doc.text(splitConcentration, 15, currentY);
+  currentY += splitConcentration.length * 5 + 10;
+
+  // Concentration table
+  const concentrationTableData = platformConcentration.map(p => [
+    p.platform,
+    `${p.percentage.toFixed(1)}%`,
+    p.percentage >= 50 ? 'High' : p.percentage >= 25 ? 'Medium' : 'Low'
+  ]);
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Platform', 'Revenue Share', 'Concentration']],
+    body: concentrationTableData,
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9
+    },
+    bodyStyles: {
+      fontSize: 9,
+      textColor: darkColor
+    },
+    alternateRowStyles: {
+      fillColor: lightGray
+    },
+    margin: { left: 15, right: 15 },
+    columnStyles: {
+      0: { cellWidth: 80 },
+      1: { halign: 'center', cellWidth: 40 },
+      2: { halign: 'center', cellWidth: 'auto' }
+    },
+    didParseCell: (data: any) => {
+      if (data.section === 'body' && data.column.index === 2) {
+        const risk = data.cell.raw as string;
+        if (risk === 'High') {
+          data.cell.styles.textColor = [239, 68, 68];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (risk === 'Low') {
+          data.cell.styles.textColor = secondaryColor;
+        }
+      }
+    }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+
   // ===== TAX ANALYSIS =====
   doc.addPage();
   currentY = 20;
@@ -413,6 +606,72 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
     currentY = (doc as any).lastAutoTable.finalY + 10;
   }
 
+  // ===== REVENUE FORECASTING =====
+  doc.addPage();
+  currentY = 20;
+  addSectionHeader('Revenue Forecasting & Trends');
+
+  // Calculate 3-month moving average
+  const recentMonths = analytics.monthlyData.slice(-6);
+  let avgRevenue = 0;
+  let trendDirection = 'stable';
+  
+  if (recentMonths.length >= 3) {
+    const last3Months = recentMonths.slice(-3);
+    avgRevenue = last3Months.reduce((sum, m) => sum + m.netUsd, 0) / 3;
+    
+    if (last3Months.length >= 2) {
+      const growth = ((last3Months[last3Months.length - 1].netUsd - last3Months[0].netUsd) / last3Months[0].netUsd) * 100;
+      trendDirection = growth > 10 ? 'growing' : growth < -10 ? 'declining' : 'stable';
+    }
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  const forecastText = `Based on recent trends, average monthly revenue is ${formatCurrency(avgRevenue, 'USD')}. Revenue trend is ${trendDirection}.`;
+  const splitForecast = doc.splitTextToSize(forecastText, pageWidth - 30);
+  doc.text(splitForecast, 15, currentY);
+  currentY += splitForecast.length * 5 + 12;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Projected Revenue (Next 3 Months)', 15, currentY);
+  currentY += 8;
+
+  const forecastTableData = [];
+  if (recentMonths.length > 0) {
+    const lastMonth = recentMonths[recentMonths.length - 1];
+    const lastMonthDate = new Date(`${lastMonth.month} 1, ${lastMonth.year}`);
+    
+    for (let i = 1; i <= 3; i++) {
+      const forecastDate = new Date(lastMonthDate);
+      forecastDate.setMonth(forecastDate.getMonth() + i);
+      const monthName = forecastDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const conservativeEst = avgRevenue;
+      const growthFactor = trendDirection === 'growing' ? 1.1 : trendDirection === 'declining' ? 0.9 : 1.0;
+      const optimisticEst = avgRevenue * growthFactor;
+      
+      forecastTableData.push([
+        monthName,
+        formatCurrency(conservativeEst, 'USD'),
+        formatCurrency(optimisticEst, 'USD')
+      ]);
+    }
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Month', 'Conservative', 'Optimistic']],
+      body: forecastTableData,
+      theme: 'grid',
+      headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: darkColor },
+      alternateRowStyles: { fillColor: lightGray },
+      margin: { left: 15, right: 15 }
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   // ===== INSIGHTS & RECOMMENDATIONS =====
   doc.addPage();
   currentY = 20;
@@ -453,9 +712,9 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
   addSectionHeader('Complete Transaction History');
 
   const transactionData = transactions
-    .sort((a, b) => new Date(a.releaseDate || 0).getTime() - new Date(b.releaseDate || 0).getTime())
+    .sort((a, b) => new Date(a.earningMonth || a.releaseDate || 0).getTime() - new Date(b.earningMonth || b.releaseDate || 0).getTime())
     .map(t => [
-      new Date(t.releaseDate || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
+      new Date(t.earningMonth || t.releaseDate || '').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       t.platform || '-',
       t.method || '-',
       formatCurrency(t.expectedUsd || 0, 'USD'),
@@ -466,7 +725,7 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
 
   autoTable(doc, {
     startY: currentY,
-    head: [['Date', 'Platform', 'Method', 'Expected', 'Tax', 'Net', 'Status']],
+    head: [['Month', 'Platform', 'Method', 'Expected', 'Tax', 'Net', 'Status']],
     body: transactionData,
     theme: 'striped',
     headStyles: {
