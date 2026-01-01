@@ -2,10 +2,12 @@ import React from 'react';
 import Header from '../components/Header';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import ConfirmModal from '../components/ConfirmModal';
 import { Building2, Plus, History, ChevronRight, Trash2 } from 'lucide-react';
 import { Report } from '../types';
 import { formatCurrency } from '../constants';
 import { calculateTotalNet } from '../services/transactionService';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface DashboardProps {
   reports: Report[];
@@ -20,6 +22,22 @@ const Dashboard: React.FC<DashboardProps> = ({
   onCreateReport, 
   onDeleteReport 
 }) => {
+  const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirm();
+
+  const handleDeleteClick = async (reportId: string, reportName: string) => {
+    const confirmed = await confirm({
+      title: 'Delete Report',
+      message: `Are you sure you want to delete "${reportName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (confirmed) {
+      onDeleteReport(reportId);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <Header onNewReport={onCreateReport} />
@@ -64,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       onClick={(e) => {
                          e.preventDefault();
                          e.stopPropagation();
-                         onDeleteReport(report.id);
+                         handleDeleteClick(report.id, report.companyName);
                       }}
                       className="h-8 w-8 bg-white/80 hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Delete Report"
@@ -105,6 +123,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             );
           })}
         </div>
+      )}
+
+      {/* Confirm Modal */}
+      {options && (
+        <ConfirmModal
+          isOpen={isOpen}
+          title={options.title}
+          message={options.message}
+          confirmText={options.confirmText}
+          cancelText={options.cancelText}
+          variant={options.variant}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       )}
     </div>
   );

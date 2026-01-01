@@ -24,11 +24,9 @@ function App() {
   };
 
   const handleDeleteReport = (id: string) => {
-    if (confirm('Are you sure you want to delete this report?')) {
-      deleteReport(id);
-      if (activeReport?.id === id) {
-        setActiveReport(null);
-      }
+    deleteReport(id);
+    if (activeReport?.id === id) {
+      setActiveReport(null);
     }
   };
 
