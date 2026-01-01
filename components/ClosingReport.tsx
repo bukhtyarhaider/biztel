@@ -62,50 +62,18 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName }) => {
 
   const handleGeneratePDF = async () => {
     setIsGenerating(true);
-    const element = document.getElementById('report-content');
     
-    if (!element) {
-        setIsGenerating(false);
-        return;
-    }
-
-    // Add PDF export class to force desktop styling and full width
-    element.classList.add('pdf-export-active');
-    
-    // Check if html2pdf is loaded
-    // @ts-ignore
-    if (typeof window !== 'undefined' && window.html2pdf) {
-      const opt = {
-        margin: [10, 10, 10, 10], // top, left, bottom, right in mm
-        filename: `${companyName.replace(/\s+/g, '_')}_FiscalReport_2025.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, // Higher scale for text clarity
-          useCORS: true,
-          logging: false,
-          windowWidth: 1280, // Force the canvas to be at least this wide
-          ignoreElements: (element: Element) => {
-             return element.classList.contains('no-print') || element.hasAttribute('data-html2canvas-ignore');
-          }
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      try {
-        // @ts-ignore
-        await window.html2pdf().set(opt).from(element).save();
-      } catch (e) {
-        console.error("PDF generation failed", e);
-      } finally {
-        element.classList.remove('pdf-export-active');
-        setIsGenerating(false);
-      }
-    } else {
-      element.classList.remove('pdf-export-active');
-      console.error('html2pdf library not loaded');
+    try {
+      const { generateProfessionalPDF } = await import('../utils/pdfGenerator');
+      await generateProfessionalPDF({
+        companyName,
+        transactions: data
+      });
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
       setIsGenerating(false);
-      alert('PDF generation library not loaded. Please try Print/Save PDF instead.');
     }
   };
 
@@ -143,7 +111,7 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName }) => {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-              <span>Download PDF Report</span>
+              <span>Generate Professional Report</span>
             </button>
           </div>
         </div>

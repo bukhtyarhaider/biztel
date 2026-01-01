@@ -42,10 +42,35 @@ export const processFile = async (file: File, options: ParseOptions): Promise<Re
             transactions = dataRows.filter(row => row && row.length > 0 && row[1]).map((row, index) => {
                 const releaseDate = parseExcelDate(row[1]);
                 
+                // Helper to proper case
+                const toTitleCase = (str: string) => str ? str.trim().charAt(0).toUpperCase() + str.trim().slice(1).toLowerCase() : '';
+
+                const getNumber = (val: any) => {
+                    if (typeof val === 'number' && !isNaN(val)) return val;
+                    return 0;
+                };
+
+                // Parse earning month from the Month column (row[0])
+                const parseEarningMonth = (monthStr: any) => {
+                    if (!monthStr) return releaseDate;
+                    
+                    // Month is like "April", "May", etc.
+                    // We need to convert it to a date. Use the release year or current year
+                    const releaseYear = new Date(releaseDate).getFullYear();
+                    const monthName = String(monthStr).trim();
+                    
+                    // Create a date from month name and year
+                    const monthDate = new Date(`${monthName} 1, ${releaseYear}`);
+                    if (!isNaN(monthDate.getTime())) {
+                        return monthDate.toISOString();
+                    }
+                    return releaseDate;
+                };
+
                 return {
                     id: `txn-${Date.now()}-${index}`,
                     date: releaseDate, 
-                    earningMonth: releaseDate, 
+                    earningMonth: parseEarningMonth(row[0]),
                     releaseDate: releaseDate,
                     receivedDate: row[2] ? parseExcelDate(row[2]) : null,
                     durationDays: getNumber(row[3]),
