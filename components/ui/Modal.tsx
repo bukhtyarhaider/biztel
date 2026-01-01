@@ -24,22 +24,22 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
       <Card className={cn(
-        "w-full max-w-lg bg-white border-0 shadow-2xl ring-1 ring-slate-200/50 animate-in zoom-in-95 slide-in-from-bottom-5 duration-200 p-0 overflow-hidden",
+        "w-full max-w-lg bg-[#0B0F19] border border-white/10 shadow-2xl ring-1 ring-white/5 animate-in zoom-in-95 slide-in-from-bottom-5 duration-200 p-0 overflow-hidden",
         className
       )}>
-        <div className="p-6 border-b border-slate-200/50 flex justify-between items-start bg-gradient-to-br from-slate-50 to-white">
+        <div className="p-6 border-b border-white/5 flex justify-between items-start bg-white/5">
           <div>
-            <CardTitle className="text-xl font-bold text-slate-900">
+            <CardTitle className="text-lg font-bold text-white uppercase tracking-wider font-mono">
               {title}
             </CardTitle>
             {description && (
-              <p className="text-sm text-slate-600 mt-1">{description}</p>
+              <p className="text-xs text-muted-foreground mt-1 font-mono">{description}</p>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-slate-200">
-            <X className="w-5 h-5 text-slate-500" />
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10 text-muted-foreground hover:text-white">
+            <X className="w-5 h-5" />
           </Button>
         </div>
 

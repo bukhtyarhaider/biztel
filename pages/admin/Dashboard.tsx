@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DashboardCard from '../../components/DashboardCard'; 
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +10,10 @@ import {
   Activity, 
   Plus,
   ArrowUpRight,
-  Clock
+  Clock,
+  Briefcase,
+  Shield,
+  FileText
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -26,103 +30,105 @@ const AdminDashboard: React.FC = () => {
 
   const quickStats = [
     {
-      title: 'Total Projects',
+      title: 'Active Portfolios',
       value: stats.projectCount,
-      icon: <FolderKanban className="w-6 h-6" />,
-      color: 'bg-blue-500',
+      icon: <Briefcase className="w-5 h-5" />,
+      colorClass: 'bg-emerald-500/10 text-emerald-500',
       path: '/admin/projects'
     },
     {
-      title: 'Total Users',
+      title: 'Investor Accounts',
       value: stats.userCount,
-      icon: <Users className="w-6 h-6" />,
-      color: 'bg-green-500',
+      icon: <Users className="w-5 h-5" />,
+      colorClass: 'bg-blue-500/10 text-blue-500',
       path: '/admin/users'
     },
     {
-      title: 'Recent Activity',
+      title: 'System Events',
       value: stats.recentActivity,
-      icon: <Activity className="w-6 h-6" />,
-      color: 'bg-purple-500',
+      icon: <Activity className="w-5 h-5" />,
+      colorClass: 'bg-amber-500/10 text-amber-500',
       path: '/admin/activity'
     }
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-          <p className="text-slate-500 mt-1">Manage your projects and users</p>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-wider">Command Console</h1>
+          <p className="text-muted-foreground mt-1 text-sm font-light">System overview and management controls.</p>
         </div>
         <Button onClick={() => navigate('/admin/projects')} className="gap-2">
-          <Plus className="w-5 h-5" />
-          New Project
+          <Plus className="w-4 h-4" />
+          New Portfolio
         </Button>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats as Tickers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {quickStats.map((stat, index) => (
-          <Card 
-            key={index}
-            onClick={() => navigate(stat.path)}
-            className="p-6 cursor-pointer hover:shadow-lg transition-all group"
-          >
-            <div className="flex items-start justify-between">
-              <div className={`p-3 rounded-xl ${stat.color} text-white`}>
-                {stat.icon}
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
-            </div>
-            <div className="mt-4">
-              <p className="text-3xl font-bold text-slate-900">{loading ? '-' : stat.value}</p>
-              <p className="text-slate-500 mt-1">{stat.title}</p>
-            </div>
-          </Card>
+          <div key={index} onClick={() => navigate(stat.path)} className="cursor-pointer group">
+             <DashboardCard
+               title={stat.title}
+               value={loading ? '-' : stat.value}
+               icon={stat.icon}
+               colorClass={stat.colorClass}
+               subValue="Total Records"
+             />
+          </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Quick Actions Grid */}
+      <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Management Modules</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card 
           onClick={() => navigate('/admin/projects')}
-          className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
+          className="p-6 cursor-pointer hover:border-accent/50 transition-all flex flex-col gap-4 group"
         >
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <FolderKanban className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center justify-between">
+             <div className="p-3 bg-blue-500/10 rounded-lg text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+               <Briefcase className="w-6 h-6" />
+             </div>
+             <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Manage Projects</h3>
-            <p className="text-sm text-slate-500">Create, edit, and assign projects</p>
+            <h3 className="font-semibold text-white">Portfolio Management</h3>
+            <p className="text-xs text-muted-foreground mt-1">Create and manage investment portfolios.</p>
           </div>
         </Card>
 
         <Card 
           onClick={() => navigate('/admin/users')}
-          className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
+          className="p-6 cursor-pointer hover:border-accent/50 transition-all flex flex-col gap-4 group"
         >
-          <div className="p-3 bg-green-100 rounded-xl">
-            <Users className="w-6 h-6 text-green-600" />
+          <div className="flex items-center justify-between">
+             <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+               <Users className="w-6 h-6" />
+             </div>
+             <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Manage Users</h3>
-            <p className="text-sm text-slate-500">View and manage user access</p>
+            <h3 className="font-semibold text-white">Investor Registry</h3>
+            <p className="text-xs text-muted-foreground mt-1">Manage user access and roles.</p>
           </div>
         </Card>
 
         <Card 
           onClick={() => navigate('/admin/activity')}
-          className="p-6 cursor-pointer hover:shadow-lg transition-all flex items-center gap-4"
+          className="p-6 cursor-pointer hover:border-accent/50 transition-all flex flex-col gap-4 group"
         >
-          <div className="p-3 bg-purple-100 rounded-xl">
-            <Clock className="w-6 h-6 text-purple-600" />
+          <div className="flex items-center justify-between">
+             <div className="p-3 bg-purple-500/10 rounded-lg text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+               <Activity className="w-6 h-6" />
+             </div>
+             <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Activity Logs</h3>
-            <p className="text-sm text-slate-500">Track user actions and events</p>
+            <h3 className="font-semibold text-white">System Audit</h3>
+            <p className="text-xs text-muted-foreground mt-1">Track system-wide events and logs.</p>
           </div>
         </Card>
       </div>

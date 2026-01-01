@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
-import { Building2, ChevronRight, Lock } from 'lucide-react';
+import { Building2, ChevronRight, Lock, TrendingUp } from 'lucide-react';
 import { Project, ProjectAccess } from '../../types/database';
 import { formatCurrency } from '../../constants';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,53 +35,41 @@ const ClientDashboard: React.FC = () => {
     return transactions?.reduce((sum, t) => sum + (t.netUsd || 0), 0) || 0;
   };
 
-  const getDateRange = (transactions: any[]) => {
-    if (!transactions || transactions.length === 0) return 'No Data';
-    
-    const timestamps = transactions
-      .map(t => new Date(t.earningMonth || t.releaseDate || t.date).getTime())
-      .filter(ts => ts > 0 && !isNaN(ts));
-
-    if (timestamps.length === 0) return 'No Date Range';
-
-    const minDate = new Date(Math.min(...timestamps));
-    const maxDate = new Date(Math.max(...timestamps));
-
-    const startMonth = minDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const endMonth = maxDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-
-    return startMonth === endMonth ? startMonth : `${startMonth} - ${endMonth}`;
-  };
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">My Projects</h1>
-        <p className="text-slate-500 mt-1">View your assigned financial projects</p>
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-wider">Asset Portfolio</h1>
+          <p className="text-muted-foreground mt-1 text-sm font-light">Manage your assigned investment vehicles.</p>
+        </div>
+        <div className="text-right hidden sm:block">
+            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Total Assets</p>
+            <p className="text-xl font-bold text-white font-mono">{projects.length}</p>
+        </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-            <p className="text-slate-500">Loading projects...</p>
+        <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
         </div>
       ) : projects.length === 0 ? (
         // Empty State
-        <Card className="text-center py-20 bg-white border-dashed">
-          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-slate-300" />
+        <div className="glass-card py-20 text-center border border-dashed border-white/10 rounded-xl">
+          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">No Projects Assigned</h3>
-          <p className="text-slate-500 max-w-md mx-auto mt-2">
-            You don't have access to any projects yet. Please contact your administrator.
+          <h3 className="text-lg font-bold text-white">No Assets Assigned</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto mt-2 text-sm">
+            Contact your portfolio manager to get access to investment reports.
           </p>
-        </Card>
+        </div>
       ) : (
         // Project Grid
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => {
             const totalNet = calculateTotalNet(project.transactions);
-            const dateRange = getDateRange(project.transactions);
+            const access = project.access;
             
             return (
               <Link 
@@ -89,45 +77,48 @@ const ClientDashboard: React.FC = () => {
                 to={`/report/${project.id}`}
                 className="block group relative"
               >
-                <Card 
-                  className="hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden bg-white h-full"
+                <div 
+                  className="glass-card rounded-xl p-6 h-full border border-white/5 hover:border-accent/40 transition-all duration-300 relative overflow-hidden"
                 >
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                        <Building2 className="w-6 h-6" />
-                      </div>
-                      <div className="flex gap-2">
-                        {project.access.can_download && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                            Download
-                          </span>
-                        )}
-                        <span className="text-xs text-slate-500 font-medium bg-slate-50 px-2 py-1 rounded-full border border-slate-200">
-                          View Only
-                        </span>
-                      </div>
+                  {/* Hover Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+                  <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div className="p-3 bg-white/5 text-white rounded-lg border border-white/5 group-hover:scale-110 transition-transform duration-300">
+                      <Building2 className="w-5 h-5" />
                     </div>
-                    
-                    <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
-                      {project.company_name}
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-6 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                      {dateRange}
-                    </p>
-                    
-                    <div className="pt-4 border-t border-slate-100 flex justify-between items-end">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Net Revenue</div>
-                        <div className="text-xl font-bold text-slate-900">{formatCurrency(totalNet, 'USD')}</div>
-                      </div>
-                      <div className="flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
-                        View Details <ChevronRight className="w-4 h-4 ml-1" />
-                      </div>
+                    <div className="flex gap-2">
+                        {access.can_download && (
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                                EXPORT
+                            </span>
+                        )}
+                        <span className="text-[10px] font-mono text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/10">
+                             {access.can_edit ? 'MANAGE' : 'VIEW'}
+                        </span>
                     </div>
                   </div>
-                </Card>
+                  
+                  <div className="relative z-10">
+                    <h3 className="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors line-clamp-1">
+                        {project.company_name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-6 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Active Portfolio
+                    </p>
+                    
+                    <div className="pt-4 border-t border-white/10 flex justify-between items-end">
+                        <div>
+                        <div className="text-[10px] text-muted-foreground mb-1 font-medium uppercase tracking-wider">Net Yield (YTD)</div>
+                        <div className="text-xl font-bold text-accent font-mono">{formatCurrency(totalNet, 'USD')}</div>
+                        </div>
+                        <div className="p-2 rounded-full bg-white/5 text-white opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
+                             <ChevronRight className="w-4 h-4" />
+                        </div>
+                    </div>
+                  </div>
+                </div>
               </Link>
             );
           })}

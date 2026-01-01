@@ -14,34 +14,38 @@ const DashboardCard: React.FC<MetricCardProps> = ({
   colorClass,
 }) => {
   return (
-    <Card className="hover:shadow-md transition-all border-slate-200 shadow-sm bg-white">
-      <CardContent className="p-6 flex flex-col justify-between h-full">
-        <div className="flex justify-between items-start mb-4">
+    <Card className="glass-card border-none rounded-lg overflow-hidden group hover:bg-white/5 transition-all duration-300">
+      <CardContent className="p-5 flex flex-col justify-between h-full relative">
+        {/* Glow effect */}
+        <div className={cn("absolute -right-6 -top-6 w-24 h-24 rounded-full blur-3xl opacity-20", 
+            trend === 'up' ? 'bg-emerald-500' : trend === 'down' ? 'bg-rose-500' : 'bg-blue-500'
+        )}></div>
+
+        <div className="flex justify-between items-start mb-2 relative z-10">
           <div>
-            <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider">{title}</h3>
-            <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
-            {subValue && <p className="text-xs text-slate-400 mt-1 font-mono">{subValue}</p>}
+            <h3 className="text-muted-foreground text-[10px] font-semibold uppercase tracking-widest">{title}</h3>
+            <p className="text-2xl font-bold text-white mt-1 font-mono tracking-tight">{value}</p>
           </div>
-          <div className={cn("p-3 rounded-lg flex items-center justify-center", colorClass)}>
+          <div className={cn("p-2 rounded-md bg-white/5 text-white/70", colorClass)}>
             {icon}
           </div>
         </div>
         
-        {(trend || trendValue) && (
-          <div className="flex items-center mt-2">
-            {trend === 'up' && <TrendingUp className="w-4 h-4 text-emerald-500 mr-1" />}
-            {trend === 'down' && <TrendingDown className="w-4 h-4 text-rose-500 mr-1" />}
-            {trend === 'neutral' && <Minus className="w-4 h-4 text-slate-400 mr-1" />}
-            <span className={cn(
-              "text-sm font-medium",
-              trend === 'up' ? 'text-emerald-500' : 
-              trend === 'down' ? 'text-rose-500' : 'text-slate-500'
+        <div className="flex items-end justify-between mt-4 relative z-10">
+            {subValue && <p className="text-xs text-muted-foreground font-mono">{subValue}</p>}
+            
+            {(trend || trendValue) && (
+            <div className={cn("flex items-center text-xs font-mono px-1.5 py-0.5 rounded", 
+                trend === 'up' ? 'text-emerald-400 bg-emerald-500/10' : 
+                trend === 'down' ? 'text-rose-400 bg-rose-500/10' : 'text-slate-400'
             )}>
-              {trendValue}
-            </span>
-            <span className="text-xs text-muted-foreground ml-2">vs last period</span>
-          </div>
-        )}
+                {trend === 'up' && <TrendingUp className="w-3 h-3 mr-1" />}
+                {trend === 'down' && <TrendingDown className="w-3 h-3 mr-1" />}
+                {trend === 'neutral' && <Minus className="w-3 h-3 mr-1" />}
+                <span>{trendValue}</span>
+            </div>
+            )}
+        </div>
       </CardContent>
     </Card>
   );

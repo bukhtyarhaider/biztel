@@ -90,7 +90,7 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDow
   };
 
   return (
-    <div className="bg-slate-800 text-white rounded-xl shadow-lg overflow-hidden relative">
+    <div className="glass-card text-white rounded-xl shadow-lg overflow-hidden relative border border-white/5">
       {/* Simplified background for better PDF rasterization compatibility */}
       <div className="absolute top-0 right-0 p-32 bg-blue-500 rounded-full opacity-10 filter blur-3xl -translate-y-1/2 translate-x-1/2"></div>
       <div className="absolute bottom-0 left-0 p-32 bg-emerald-500 rounded-full opacity-10 filter blur-3xl translate-y-1/2 -translate-x-1/2"></div>
@@ -105,7 +105,7 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDow
               <h2 className="text-2xl font-bold flex items-center gap-2">
                 {companyName}
               </h2>
-              <p className="text-slate-400 text-sm mt-1">2025 Fiscal Year Closing Report • May 2024 - Jan 2025</p>
+              <p className="text-muted-foreground text-sm mt-1">2025 Fiscal Year Closing Report • May 2024 - Jan 2025</p>
             </div>
           </div>
           
@@ -114,7 +114,7 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDow
               <>
                 <button 
                   onClick={handleDownloadCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   <span>CSV</span>
@@ -139,38 +139,38 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDow
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Section 1: Gross Revenue */}
-          <div className="bg-slate-700/50 backdrop-blur-sm p-6 rounded-lg border border-slate-600">
+          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg border border-white/5">
             <div className="flex items-center gap-2 mb-2">
-              <Landmark className="w-4 h-4 text-slate-400" />
+              <Landmark className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-slate-300">Gross Expected Revenue</span>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-3xl font-bold text-white mb-1 font-mono">
               {formatCurrency(totalExpectedUSD, 'USD')}
             </div>
-            <div className="text-xs text-slate-400">Total invoice value before deductions</div>
+            <div className="text-xs text-muted-foreground">Total invoice value before deductions</div>
           </div>
 
           {/* Section 2: Realized Net */}
-          <div className="bg-slate-700/50 backdrop-blur-sm p-6 rounded-lg border border-slate-600">
+          <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg border border-white/5">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               <span className="text-sm font-medium text-slate-300">Net Income Realized</span>
             </div>
-            <div className="text-3xl font-bold text-emerald-400 mb-1">
+            <div className="text-3xl font-bold text-emerald-400 mb-1 font-mono">
               {formatCurrency(totalNetRealizedUSD, 'USD')}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-muted-foreground">
               ≈ {formatCurrency(totalNetRealizedPKR, 'PKR')} (Cleared)
             </div>
           </div>
 
           {/* Section 3: Projected Closing */}
-          <div className="bg-blue-600/20 backdrop-blur-sm p-6 rounded-lg border border-blue-500/30">
+          <div className="bg-blue-600/10 backdrop-blur-sm p-6 rounded-lg border border-blue-500/20">
             <div className="flex items-center gap-2 mb-2">
               <Calculator className="w-4 h-4 text-blue-300" />
               <span className="text-sm font-medium text-blue-200">Projected Closing Balance</span>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-3xl font-bold text-white mb-1 font-mono">
               {formatCurrency(closingBalanceUSD, 'USD')}
             </div>
             <div className="text-xs text-blue-200/70">
@@ -179,7 +179,7 @@ const ClosingReport: React.FC<ClosingReportProps> = ({ data, companyName, canDow
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-700 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
+        <div className="mt-8 pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
              <Building2 className="w-4 h-4 text-slate-500" />
              <span>Prepared for {companyName}</span>

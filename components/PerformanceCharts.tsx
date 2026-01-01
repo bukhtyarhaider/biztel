@@ -7,12 +7,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell,
-  Legend,
   PieChart,
   Pie,
+  Cell,
+  Legend,
   Line
 } from 'recharts';
 import { Transaction } from '../types';
@@ -68,8 +66,8 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
 
   // Aggregate by platform for Pie Chart
   const platformData = [
-    { name: 'Youtube', value: 0, color: '#FF0000' },
-    { name: 'Tiktok', value: 0, color: '#00F2EA' }
+    { name: 'Youtube', value: 0, color: '#ef4444' }, // Red-500
+    { name: 'Tiktok', value: 0, color: '#06b6d4' }   // Cyan-500
   ];
 
   data.forEach(t => {
@@ -77,7 +75,6 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
     if (t.platform === 'Tiktok') platformData[1].value += t.netUsd;
   });
 
-  // Avoid division by zero in UI calculation
   const totalPlatformValue = platformData[0].value + platformData[1].value;
   const youtubePercent = totalPlatformValue > 0 
     ? ((platformData[0].value / totalPlatformValue) * 100).toFixed(0) 
@@ -86,39 +83,48 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* Revenue Trend Area Chart with Growth */}
-      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Monthly Revenue & Performance Gain</h3>
+      <div className="lg:col-span-2 glass-card p-6 rounded-xl border border-white/5">
+        <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-6">Performance Analytics</h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <XAxis 
+                dataKey="name" 
+                stroke="#64748b" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                fontFamily="monospace"
+              />
               <YAxis 
                 yAxisId="left"
-                stroke="#94a3b8" 
-                fontSize={12} 
+                stroke="#64748b" 
+                fontSize={10} 
                 tickLine={false} 
                 axisLine={false} 
                 tickFormatter={(value) => `$${value}`}
+                fontFamily="monospace"
               />
               <YAxis 
                 yAxisId="right"
                 orientation="right"
-                stroke="#10b981" 
-                fontSize={12} 
+                stroke="#d4af37" 
+                fontSize={10} 
                 tickLine={false} 
                 axisLine={false} 
                 tickFormatter={(value) => `${value}%`}
+                fontFamily="monospace"
               />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                itemStyle={{ color: '#1e293b' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff' }}
+                itemStyle={{ color: '#fff', fontSize: '12px', fontFamily: 'monospace' }}
                 formatter={(value: number, name: string) => {
                   if (name === 'Growth') return [`${value > 0 ? '+' : ''}${value}%`, 'MoM Growth'];
                   return [`$${value.toFixed(2)}`, name];
@@ -128,30 +134,32 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
                 yAxisId="left"
                 type="monotone" 
                 dataKey="Total" 
-                stroke="#3b82f6" 
+                stroke="#10b981" 
                 fillOpacity={1} 
                 fill="url(#colorTotal)" 
-                strokeWidth={3}
+                strokeWidth={2}
                 name="Revenue"
               />
               <Line
                 yAxisId="right"
                 type="monotone"
                 dataKey="Growth"
-                stroke="#10b981"
+                stroke="#d4af37"
                 strokeWidth={2}
-                dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6 }}
+                dot={{ r: 3, fill: '#d4af37', strokeWidth: 1, stroke: '#000' }}
+                activeDot={{ r: 5 }}
                 name="Growth"
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+        
+        {/* Sparkline style summary below */}
+        <div className="mt-4 flex gap-4 overflow-x-auto pb-2 border-t border-white/5 pt-4">
             {monthlyData.map((d, i) => (
                 <div key={i} className="flex-shrink-0 text-center min-w-[60px]">
-                    <div className="text-xs text-slate-500">{d.name}</div>
-                    <div className={`text-xs font-bold ${d.Growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <div className="text-[10px] text-muted-foreground font-mono">{d.name}</div>
+                    <div className={`text-[10px] font-bold font-mono ${d.Growth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {i === 0 ? '-' : `${d.Growth > 0 ? '+' : ''}${d.Growth}%`}
                     </div>
                 </div>
@@ -160,8 +168,8 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
       </div>
 
       {/* Platform Distribution Pie Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Platform Share</h3>
+      <div className="glass-card p-6 rounded-xl border border-white/5">
+        <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-6">Asset Allocation</h3>
         <div className="h-72 w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -173,20 +181,25 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
+                stroke="none"
               >
                 {platformData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
-              <Legend verticalAlign="bottom" height={36}/>
+              <Tooltip 
+                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                 itemStyle={{ color: '#fff', fontFamily: 'monospace' }}
+                 formatter={(value: number) => `$${value.toFixed(2)}`} 
+              />
+              <Legend verticalAlign="bottom" height={36} iconType="circle"/>
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none pb-8">
-             <span className="block text-2xl font-bold text-slate-800">
+             <span className="block text-3xl font-bold text-white font-mono">
                {youtubePercent}%
              </span>
-             <span className="text-xs text-slate-400">Youtube</span>
+             <span className="text-xs text-muted-foreground uppercase tracking-widest">Youtube</span>
           </div>
         </div>
       </div>

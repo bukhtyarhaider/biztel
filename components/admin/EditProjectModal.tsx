@@ -54,49 +54,53 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Project"
+      title="EDIT PORTFOLIO DETAILS"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6 mt-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Company Name
           </label>
           <Input
             value={formData.company_name}
             onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
             required
-            placeholder="Enter company name"
+            className="bg-black/20 border-white/10 text-white placeholder:text-muted-foreground focus:border-accent font-mono"
+            placeholder="ENTER COMPANY NAME"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Google Sheets URL
+          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            Data Source (Google Sheets)
           </label>
           <Input
             value={formData.sheet_url}
             onChange={(e) => setFormData(prev => ({ ...prev, sheet_url: e.target.value }))}
-            placeholder="https://docs.google.com/spreadsheets/d/..."
+            className="bg-black/20 border-white/10 text-white placeholder:text-muted-foreground focus:border-accent font-mono text-xs"
+            placeholder="HTTPS://DOCS.GOOGLE.COM/SPREADSHEETS/..."
           />
-          <p className="text-xs text-slate-500 mt-1">
-            Optional. Used for syncing transactions.
+          <p className="text-[10px] text-muted-foreground mt-2 font-mono">
+            OPTIONAL · USED FOR LIVE TRANSACTION SYNC
           </p>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={onClose}
             disabled={loading}
+            className="hover:bg-white/10 text-muted-foreground hover:text-white"
           >
-            Cancel
+            CANCEL
           </Button>
           <Button
             type="submit"
             disabled={loading}
+            className="bg-accent text-black hover:bg-accent/90"
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? 'SAVING...' : 'SAVE CHANGES'}
           </Button>
         </div>
       </form>

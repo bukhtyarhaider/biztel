@@ -12,7 +12,8 @@ import {
   Edit,
   Trash2,
   Users,
-  Clock
+  Clock,
+  Terminal
 } from 'lucide-react';
 import { ActivityLog } from '../../types/database';
 import { userService } from '../../services/userService';
@@ -20,23 +21,23 @@ import { useNavigate } from 'react-router-dom';
 
 const getActivityIcon = (action: string) => {
   switch (action) {
-    case 'login': return <LogIn className="w-4 h-4" />;
-    case 'logout': return <LogOut className="w-4 h-4" />;
-    case 'signup': return <UserPlus className="w-4 h-4" />;
-    case 'project_created': return <FolderPlus className="w-4 h-4" />;
-    case 'project_updated': return <Edit className="w-4 h-4" />;
-    case 'project_deleted': return <Trash2 className="w-4 h-4" />;
-    case 'user_assigned': return <Users className="w-4 h-4" />;
-    default: return <Activity className="w-4 h-4" />;
+    case 'login': return <LogIn className="w-3 h-3" />;
+    case 'logout': return <LogOut className="w-3 h-3" />;
+    case 'signup': return <UserPlus className="w-3 h-3" />;
+    case 'project_created': return <FolderPlus className="w-3 h-3" />;
+    case 'project_updated': return <Edit className="w-3 h-3" />;
+    case 'project_deleted': return <Trash2 className="w-3 h-3" />;
+    case 'user_assigned': return <Users className="w-3 h-3" />;
+    default: return <Activity className="w-3 h-3" />;
   }
 };
 
 const getActivityColor = (action: string) => {
-  if (action.includes('delete')) return 'bg-red-100 text-red-600';
-  if (action.includes('create') || action === 'signup') return 'bg-green-100 text-green-600';
-  if (action === 'login') return 'bg-blue-100 text-blue-600';
-  if (action === 'logout') return 'bg-slate-100 text-slate-600';
-  return 'bg-purple-100 text-purple-600';
+  if (action.includes('delete')) return 'text-red-400 bg-red-400/10 border-red-400/20';
+  if (action.includes('create') || action === 'signup') return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+  if (action === 'login') return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+  if (action === 'logout') return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
+  return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
 };
 
 const formatAction = (action: string) => {
@@ -75,11 +76,11 @@ const AdminActivity: React.FC = () => {
   };
 
   const categories = [
-    { id: 'all', label: 'All Activity' },
-    { id: 'auth', label: 'Authentication' },
-    { id: 'project', label: 'Projects' },
-    { id: 'user', label: 'Users' },
-    { id: 'access', label: 'Access Control' },
+    { id: 'all', label: 'ALL LOGS' },
+    { id: 'auth', label: 'AUTH' },
+    { id: 'project', label: 'PORTFOLIO' },
+    { id: 'user', label: 'USERS' },
+    { id: 'access', label: 'ACCESS' },
   ];
 
   const formatTime = (timestamp: string) => {
@@ -98,19 +99,21 @@ const AdminActivity: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="text-white hover:bg-white/10">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900">Activity Logs</h1>
-          <p className="text-slate-500">Track system events and user actions</p>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-wider">System Audit Trail</h1>
+          <p className="text-muted-foreground text-sm font-mono">
+            SECURE LOGGING ENABLED · <span className="text-accent">{totalItems} EVENTS</span>
+          </p>
         </div>
-        <Button variant="ghost" onClick={loadLogs} className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+        <Button variant="ghost" onClick={loadLogs} className="gap-2 text-xs font-mono">
+          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          SYNC LOGS
         </Button>
       </div>
 
@@ -120,10 +123,10 @@ const AdminActivity: React.FC = () => {
           <button
             key={cat.id}
             onClick={() => { setCategory(cat.id as any); setPage(1); }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3 py-1 rounded text-[10px] font-mono tracking-wider transition-all border ${
               category === cat.id
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-accent/10 text-accent border-accent/20'
+                : 'bg-white/5 text-muted-foreground border-transparent hover:border-white/10'
             }`}
           >
             {cat.label}
@@ -133,69 +136,63 @@ const AdminActivity: React.FC = () => {
 
       {/* Loading */}
       {loading ? (
-        <div className="text-center py-12">
-          <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mx-auto" />
-          <p className="text-slate-500 mt-4">Loading activity logs...</p>
+        <div className="text-center py-20">
+          <RefreshCw className="w-8 h-8 text-accent animate-spin mx-auto" />
+          <p className="text-muted-foreground mt-4 text-sm font-mono tracking-widest">FETCHING LOGS...</p>
         </div>
       ) : logs.length === 0 ? (
-        <Card className="text-center py-12">
-          <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900">No activity found</h3>
-          <p className="text-slate-500 mt-1">Try adjusting your filters</p>
-        </Card>
+        <div className="glass-card text-center py-20 border border-dashed border-white/10">
+          <Terminal className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold text-white">No logs found</h3>
+          <p className="text-muted-foreground mt-1 text-sm font-mono">System is silent.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
-          <div className="space-y-3">
+        <div className="glass-card rounded-xl border border-white/5 overflow-hidden">
+          <div className="divide-y divide-white/5">
             {logs.map((log) => (
-              <Card key={log.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4">
-                  {/* Icon */}
-                  <div className={`p-2 rounded-lg ${getActivityColor(log.action)}`}>
-                    {getActivityIcon(log.action)}
-                  </div>
+              <div key={log.id} className="p-3 hover:bg-white/5 transition-colors flex items-center gap-4 text-sm group">
+                {/* Time */}
+                <div className="w-24 text-xs font-mono text-muted-foreground text-right shrink-0">
+                   {formatTime(log.created_at)}
+                </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900">
+                {/* Status Indicator */}
+                <div className={`p-1.5 rounded border shrink-0 ${getActivityColor(log.action)}`}>
+                  {getActivityIcon(log.action)}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold">
                         {formatAction(log.action)}
-                      </span>
-                      {log.entity_type && (
-                        <span className="text-xs uppercase tracking-wider font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
-                          {log.entity_type}
+                    </span>
+                    {log.entity_type && (
+                        <span className="text-[10px] uppercase bg-white/5 text-muted-foreground px-1.5 py-0.5 rounded border border-white/5">
+                            {log.entity_type}
                         </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-500">
-                      <span className="font-medium text-slate-700">
-                        {(log as any).user?.full_name || (log as any).user?.email || 'System'}
-                      </span>
-                      {log.metadata && Object.keys(log.metadata).length > 0 && (
-                        <span className="ml-2 text-slate-400 font-mono text-xs">
-                          {JSON.stringify(log.metadata).slice(0, 60)}
-                          {JSON.stringify(log.metadata).length > 60 ? '...' : ''}
-                        </span>
-                      )}
-                    </p>
+                    )}
                   </div>
-
-                  {/* Time */}
-                  <div className="flex items-center gap-1 text-sm text-slate-400 whitespace-nowrap">
-                    <Clock className="w-3.5 h-3.5" />
-                    {formatTime(log.created_at)}
+                  <div className="text-xs text-muted-foreground truncate flex items-center gap-2">
+                    <span className="text-slate-400">
+                        USER: {(log as any).user?.full_name || (log as any).user?.email || 'SYSTEM'}
+                    </span>
+                    {log.metadata && Object.keys(log.metadata).length > 0 && (
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600">
+                            · {JSON.stringify(log.metadata).slice(0, 80)}
+                        </span>
+                    )}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-              <p className="text-sm text-slate-500">
-                Showing <span className="font-medium">{(page - 1) * ITEMS_PER_PAGE + 1}</span> to{' '}
-                <span className="font-medium">{Math.min(page * ITEMS_PER_PAGE, totalItems)}</span> of{' '}
-                <span className="font-medium">{totalItems}</span> results
+            <div className="flex items-center justify-between p-4 bg-white/5 border-t border-white/5">
+              <p className="text-xs text-muted-foreground font-mono">
+                SHOWING <span className="text-white">{(page - 1) * ITEMS_PER_PAGE + 1}</span> - <span className="text-white">{Math.min(page * ITEMS_PER_PAGE, totalItems)}</span> OF <span className="text-white">{totalItems}</span>
               </p>
               <div className="flex gap-2">
                 <Button
@@ -203,16 +200,18 @@ const AdminActivity: React.FC = () => {
                   size="sm"
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
+                  className="h-7 text-xs"
                 >
-                  Previous
+                  PREV
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
+                  className="h-7 text-xs"
                 >
-                  Next
+                  NEXT
                 </Button>
               </div>
             </div>

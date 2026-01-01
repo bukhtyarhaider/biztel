@@ -13,6 +13,7 @@ import { useSheetSync } from '../hooks/useSheetSync';
 import { 
   Wallet, DollarSign, TrendingUp, PiggyBank, ArrowLeft, RefreshCw, Link2, Settings
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ReportDetailProps {
   report: Report;
@@ -38,13 +39,10 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
   const handleLinkSheet = async (url: string, autoSync: boolean, interval: number) => {
     const success = await linkSheet(url);
     if (success) {
-      // Update report with sync settings
       onReportUpdate({
         autoSync,
         syncInterval: interval
       });
-      
-      // Perform initial sync
       await syncReport();
     }
     return success;
@@ -55,42 +53,35 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 pb-20">
-      <div className="mb-6 no-print">
+    <div className="pb-20">
+      <div className="mb-8 no-print">
         <Button 
           variant="ghost"
           onClick={onBack}
-          className="group pl-0 hover:bg-transparent hover:text-blue-600"
+          className="group pl-0 hover:bg-transparent text-muted-foreground hover:text-white mb-4"
         >
-          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mr-2 shadow-sm group-hover:border-blue-200 transition-colors">
+          <div className="p-1 rounded bg-white/5 mr-2 group-hover:bg-white/10 transition-colors">
              <ArrowLeft className="w-4 h-4" />
           </div>
-          Back to Dashboard
+          Back to Portfolio
         </Button>
         
         {/* Header Section */}
-        <div className="mt-4 flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{report.companyName}</h1>
+            <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-white uppercase tracking-tight">{report.companyName}</h1>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-accent/10 text-accent border border-accent/20">FY 24-25</span>
+            </div>
             
-            {/* Show sync status only to admins if sheet connected */}
             {isAdmin && report.source === 'sheet' && report.sheetUrl && (
-              <div className="mt-2">
-                <SyncStatusBadge
-                  status={syncStatus}
-                  lastSyncedAt={lastSyncedAt}
-                  error={syncError}
-                />
+              <div className="mt-2 text-xs font-mono text-muted-foreground">
+                Live Data Link Active
               </div>
             )}
             
-            {!isAdmin && (
-               <p className="text-sm text-slate-500 mt-1">Fiscal Year 2024-2025</p>
-            )}
-
-            {/* Upload message only if upload source */}
             {report.source === 'upload' && (
-               <p className="text-sm text-slate-500 mt-1">View-only report from uploaded file</p>
+               <p className="text-xs text-muted-foreground mt-1 font-mono">Static Report (Upload)</p>
             )}
           </div>
           
@@ -103,17 +94,17 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
                     <Button
                       onClick={handleSync}
                       disabled={isLoading}
-                      className="gap-2"
-                      variant="outline"
+                      className="gap-2 bg-white/10 hover:bg-white/20 text-white border-0"
+                      size="sm"
                     >
-                      <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                      {isLoading ? 'Syncing...' : 'Sync Now'}
+                      <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                      {isLoading ? 'SYNCING...' : 'SYNC DATA'}
                     </Button>
                     <Button
                       onClick={() => setIsLinkModalOpen(true)}
                       variant="ghost"
                       size="icon"
-                      title="Sync Settings"
+                      className="text-muted-foreground hover:text-white"
                     >
                       <Settings className="w-4 h-4" />
                     </Button>
@@ -124,7 +115,7 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
                     className="gap-2"
                   >
                     <Link2 className="w-4 h-4" />
-                    Link Google Sheet
+                    Link Data Source
                   </Button>
                 )
               ) : null}
@@ -133,47 +124,42 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
         </div>
       </div>
 
-      <div className="mb-8" id="report-content">
-         <ClosingReport data={data} companyName={report.companyName} canDownload={canDownload} />
-      </div>
-
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <DashboardCard
-          title="Net Revenue (USD)"
+          title="Gross Revenue"
           value={formatCurrency(totalRevenue, 'USD')}
-          subValue="Total fiscal year"
-          icon={<Wallet className="w-6 h-6 text-blue-600" />}
-          colorClass="bg-blue-600/10"
+          subValue="YTD Accumulation"
+          icon={<Wallet className="w-5 h-5 text-blue-400" />}
+          colorClass="bg-blue-400/10 text-blue-400"
           trend="up"
           trendValue="+24.5%"
         />
         <DashboardCard
-          title="Received Amount"
+          title="Net Realized"
           value={formatCurrency(receivedRevenue, 'USD')}
           subValue={`${formatCurrency(receivedPKR, 'PKR')} (PKR)`}
-          icon={<PiggyBank className="w-6 h-6 text-emerald-600" />}
-          colorClass="bg-emerald-600/10"
+          icon={<PiggyBank className="w-5 h-5 text-emerald-400" />}
+          colorClass="bg-emerald-400/10 text-emerald-400"
         />
         <DashboardCard
-          title="Pending Clearance"
+          title="Pending Settlement"
           value={formatCurrency(pendingRevenue, 'USD')}
-          subValue="Expected within 30 days"
-          icon={<DollarSign className="w-6 h-6 text-amber-600" />}
-          colorClass="bg-amber-600/10"
+          subValue="Expected < 30 days"
+          icon={<DollarSign className="w-5 h-5 text-amber-400" />}
+          colorClass="bg-amber-400/10 text-amber-400"
         />
         <DashboardCard
-          title="Tax Deductions"
+          title="Tax Withholding"
           value={formatCurrency(totalTax, 'USD')}
-          subValue="Withholding tax"
-          icon={<TrendingUp className="w-6 h-6 text-rose-600" />}
-          colorClass="bg-rose-600/10"
+          subValue="Fiscal Obligation"
+          icon={<TrendingUp className="w-5 h-5 text-rose-400" />}
+          colorClass="bg-rose-400/10 text-rose-400"
           trend="down"
           trendValue="-2.4%"
         />
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 p-1">
          <PerformanceCharts data={data} />
       </div>
 
@@ -181,7 +167,11 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
         <TransactionTable data={data} />
       </div>
 
-      {/* Sheet Sync Modal - Only for sheet-sourced reports */}
+      <div className="mb-8" id="report-content">
+         <ClosingReport data={data} companyName={report.companyName} canDownload={canDownload} />
+      </div>
+
+      {/* Sheet Sync Modal */}
       {report.source === 'sheet' && (
         <SheetSyncModal
           isOpen={isLinkModalOpen}

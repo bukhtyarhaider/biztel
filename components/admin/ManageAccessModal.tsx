@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Project, Profile, ProjectAccess } from '@/types/database';
 import { projectService } from '@/services/projectService';
 import { userService } from '@/services/userService';
-import { RefreshCw, Search, Check, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { RefreshCw, Search, Trash2, Plus, AlertCircle, Shield, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 
 interface ManageAccessModalProps {
@@ -51,7 +51,6 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
     if (!project) return;
     setProcessingId(`grant-${userId}`);
     try {
-      // Default to read-only access
       const newAccess = await projectService.assignUser(project.id, userId, { 
         can_view: true, 
         can_download: false 
@@ -82,7 +81,6 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
   const handleUpdatePermission = async (userId: string, permission: 'can_view' | 'can_download', value: boolean) => {
     if (!project) return;
     
-    // Optimistic update
     const previousAccess = currentAccess;
     const targetAccess = currentAccess.find(a => a.user_id === userId);
     if (!targetAccess) return;
@@ -93,12 +91,10 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
       [permission]: value
     };
 
-    // Ensure if download is true, view must be true
     if (permission === 'can_download' && value === true) {
       updatedPermissions.can_view = true;
     }
 
-    // Temporarily update UI
     setCurrentAccess(prev => prev.map(a => 
       a.user_id === userId ? { ...a, ...updatedPermissions } : a
     ));
@@ -107,7 +103,6 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
       await projectService.assignUser(project.id, userId, updatedPermissions);
     } catch (error) {
       console.error('Error updating permissions:', error);
-      // Revert on error
       setCurrentAccess(previousAccess);
       alert('Failed to update permission');
     }
@@ -126,33 +121,33 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Manage Project Access"
-      description={project ? `Manage who can access ${project.company_name}` : undefined}
-      className="max-w-2xl"
+      title="ACCESS CONTROL"
+      description={project ? `MANAGE INVESTOR PERMISSIONS FOR ${project.company_name.toUpperCase()}` : undefined}
+      className="max-w-2xl bg-[#0B0F19] border-white/10"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 mt-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search users by name or email..."
-            className="pl-9"
+            placeholder="SEARCH INVESTORS..."
+            className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground focus:border-accent font-mono text-sm"
           />
         </div>
 
         {/* User List */}
-        <div className="max-h-[400px] overflow-y-auto space-y-2 border rounded-lg p-2 bg-slate-50 min-h-[200px]">
+        <div className="max-h-[400px] overflow-y-auto space-y-2 border border-white/5 rounded-lg p-2 bg-black/20 min-h-[200px]">
           {loading ? (
-            <div className="flex items-center justify-center h-40 text-slate-500 gap-2">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              Loading users...
+            <div className="flex items-center justify-center h-40 text-muted-foreground gap-2 font-mono text-sm">
+              <RefreshCw className="w-4 h-4 animate-spin text-accent" />
+              LOADING REGISTRY...
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground/50">
               <AlertCircle className="w-8 h-8 mb-2" />
-              <p>No users found matching "{searchQuery}"</p>
+              <p className="font-mono text-sm">NO INVESTORS MATCHING "{searchQuery}"</p>
             </div>
           ) : (
             filteredUsers.map(user => {
@@ -163,42 +158,50 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
               return (
                 <div 
                   key={user.id} 
-                  className={`flex items-center justify-between p-3 rounded-md border ${
-                    hasAccess ? 'bg-white border-blue-100 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-100'
+                  className={`flex items-center justify-between p-3 rounded border transition-all ${
+                    hasAccess ? 'bg-accent/5 border-accent/20 shadow-[0_0_10px_-5px_rgba(16,185,129,0.3)]' : 'bg-transparent border-transparent hover:bg-white/5'
                   }`}
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{user.full_name || 'Unnamed User'}</p>
-                    <p className="text-sm text-slate-500">{user.email}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'
-                    }`}>
-                      {user.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                         <span className="font-bold text-white text-sm">{user.full_name || 'UNNAMED'}</span>
+                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${
+                            user.role === 'admin' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                         }`}>
+                           {user.role === 'admin' ? 'ADMIN' : 'INVESTOR'}
+                         </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{user.email}</p>
                   </div>
 
                   <div className="flex items-center gap-4">
                     {hasAccess ? (
                       <>
-                        <div className="flex flex-col gap-1 items-end mr-2">
-                          <label className="flex items-center gap-2 cursor-pointer text-sm select-none">
+                        <div className="flex items-center gap-4 mr-2">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-white transition-colors select-none group">
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${access?.can_view ? 'bg-accent border-accent text-black' : 'border-white/20 group-hover:border-white/40'}`}>
+                                {access?.can_view && <Check className="w-3 h-3" />}
+                            </div>
                             <input
                               type="checkbox"
                               checked={access?.can_view}
                               onChange={(e) => handleUpdatePermission(user.id, 'can_view', e.target.checked)}
-                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              className="hidden"
                             />
-                            <span>View</span>
+                            VIEW
                           </label>
-                          <label className="flex items-center gap-2 cursor-pointer text-sm select-none">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-white transition-colors select-none group">
+                             <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${access?.can_download ? 'bg-accent border-accent text-black' : 'border-white/20 group-hover:border-white/40'} ${!access?.can_view ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {access?.can_download && <Check className="w-3 h-3" />}
+                            </div>
                             <input
                               type="checkbox"
                               checked={access?.can_download}
                               onChange={(e) => handleUpdatePermission(user.id, 'can_download', e.target.checked)}
-                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              className="hidden"
                               disabled={!access?.can_view}
                             />
-                            <span>Download</span>
+                            EXPORT
                           </label>
                         </div>
                         <Button
@@ -206,10 +209,10 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
                           size="icon"
                           onClick={() => handleRemoveAccess(user.id)}
                           disabled={isProcessing}
-                          className="hover:bg-red-50 hover:text-red-600"
-                          title="Remove Access"
+                          className="hover:bg-red-500/20 hover:text-red-400 text-muted-foreground h-8 w-8"
+                          title="REVOKE ACCESS"
                         >
-                          {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          {isProcessing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </Button>
                       </>
                     ) : (
@@ -217,14 +220,14 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
                         size="sm"
                         onClick={() => handleGrantAccess(user.id)}
                         disabled={isProcessing}
-                        className="gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+                        className="gap-1 bg-white/5 border border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white text-xs h-8"
                       >
                         {isProcessing ? (
                           <RefreshCw className="w-3 h-3 animate-spin" />
                         ) : (
                           <Plus className="w-3 h-3" />
                         )}
-                        Grant Access
+                        GRANT
                       </Button>
                     )}
                   </div>
@@ -234,8 +237,8 @@ export const ManageAccessModal: React.FC<ManageAccessModalProps> = ({
           )}
         </div>
 
-        <div className="text-right">
-          <Button onClick={onClose}>Done</Button>
+        <div className="text-right pt-4 border-t border-white/5">
+          <Button onClick={onClose} className="bg-white text-black hover:bg-white/90 font-mono text-xs px-6">DONE</Button>
         </div>
       </div>
     </Modal>

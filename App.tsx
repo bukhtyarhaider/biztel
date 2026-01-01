@@ -6,6 +6,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute, PublicRoute } from './components/RouteGuards';
 
@@ -32,43 +33,45 @@ const RootRedirect: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes (Login/Signup) - Redirects to dashboard if already logged in */}
-          <Route element={<PublicRoute />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-          </Route>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes (Login/Signup) - Redirects to dashboard if already logged in */}
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+            </Route>
 
-          {/* Protected Routes - Requires Login */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
-              {/* Common Routes */}
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/report/:id" element={<ReportView />} />
-              
-              {/* Root Redirect */}
-              <Route path="/" element={<RootRedirect />} />
+            {/* Protected Routes - Requires Login */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                {/* Common Routes */}
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/report/:id" element={<ReportView />} />
+                
+                {/* Root Redirect */}
+                <Route path="/" element={<RootRedirect />} />
 
-              {/* Admin Routes - Requires Admin Role */}
-              <Route element={<ProtectedRoute requiredRole="admin" />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/projects" element={<AdminProjects />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/activity" element={<AdminActivity />} />
-              </Route>
+                {/* Admin Routes - Requires Admin Role */}
+                <Route element={<ProtectedRoute requiredRole="admin" />}>
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/projects" element={<AdminProjects />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/activity" element={<AdminActivity />} />
+                </Route>
 
-              {/* Client Routes - Requires Client Role */}
-              <Route element={<ProtectedRoute requiredRole="client" />}>
-                <Route path="/client" element={<ClientDashboard />} />
+                {/* Client Routes - Requires Client Role */}
+                <Route element={<ProtectedRoute requiredRole="client" />}>
+                  <Route path="/client" element={<ClientDashboard />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }
