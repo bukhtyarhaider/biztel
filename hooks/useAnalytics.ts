@@ -7,12 +7,14 @@ import { useMemo } from 'react';
 import { Transaction } from '../types';
 import {
   calculateTotalNet,
+  calculateTotalExpected,
   calculateRevenueByStatus,
   calculateTotalPKR,
   calculateTotalTax
 } from '../services/transactionService';
 
 export interface ReportMetrics {
+  totalGrossRevenue: number;
   totalRevenue: number;
   pendingRevenue: number;
   receivedRevenue: number;
@@ -28,6 +30,7 @@ export interface ReportMetrics {
  */
 export const useAnalytics = (transactions: Transaction[]): ReportMetrics => {
   return useMemo(() => {
+    const totalGrossRevenue = calculateTotalExpected(transactions);
     const totalRevenue = calculateTotalNet(transactions);
     const pendingRevenue = calculateRevenueByStatus(transactions, 'Pending') +
                           calculateRevenueByStatus(transactions, 'Expected');
@@ -36,6 +39,7 @@ export const useAnalytics = (transactions: Transaction[]): ReportMetrics => {
     const totalTax = calculateTotalTax(transactions);
 
     return {
+      totalGrossRevenue,
       totalRevenue,
       pendingRevenue,
       receivedRevenue,

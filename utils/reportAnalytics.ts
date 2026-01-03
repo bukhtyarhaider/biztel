@@ -46,6 +46,7 @@ export interface YearlyMetrics {
   totalTaxUsd: number;
   avgTaxPercent: number;
   avgMonthlyRevenue: number;
+  avgMonthlyGrossRevenue: number;
   totalTransactions: number;
   dateRange: { start: string; end: string };
   overallGrowth: number;
@@ -200,8 +201,11 @@ export const analyzeReport = (transactions: Transaction[]): ReportAnalytics => {
   const pendingCount = transactions.length - receivedCount;
 
   const dates = transactions
-    .map(t => t.releaseDate ? new Date(t.releaseDate).getTime() : 0)
-    .filter(t => t > 0);
+    .map(t => {
+      const dateStr = t.earningMonth || t.releaseDate;
+      return dateStr ? new Date(dateStr).getTime() : 0;
+    })
+    .filter(t => t > 0 && !isNaN(t));
   
   const startDate = dates.length > 0 ? new Date(Math.min(...dates)) : new Date();
   const endDate = dates.length > 0 ? new Date(Math.max(...dates)) : new Date();
@@ -219,6 +223,7 @@ export const analyzeReport = (transactions: Transaction[]): ReportAnalytics => {
     totalTaxUsd,
     avgTaxPercent: totalExpectedUsd > 0 ? (totalTaxUsd / totalExpectedUsd) * 100 : 0,
     avgMonthlyRevenue: monthlyData.length > 0 ? totalNetUsd / monthlyData.length : 0,
+    avgMonthlyGrossRevenue: monthlyData.length > 0 ? totalExpectedUsd / monthlyData.length : 0,
     totalTransactions: transactions.length,
     dateRange: {
       start: startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),

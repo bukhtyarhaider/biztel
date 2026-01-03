@@ -18,10 +18,12 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
   const pageHeight = doc.internal.pageSize.getHeight();
   let currentY = 20;
 
-  // Brand colors
-  const primaryColor: [number, number, number] = [59, 130, 246]; // Blue
-  const secondaryColor: [number, number, number] = [16, 185, 129]; // Green
-  const darkColor: [number, number, number] = [30, 41, 59]; // Slate
+  // Brand colors - Ventura Capital Theme
+  const primaryColor: [number, number, number] = [11, 15, 25]; // Deep Charcoal #0B0F19
+  const secondaryColor: [number, number, number] = [212, 175, 55]; // Gold #D4AF37
+  const accentColor: [number, number, number] = [16, 185, 129]; // Green #10B981
+  const surfaceColor: [number, number, number] = [17, 24, 39]; // Dark Gray Surface #111827
+  const darkColor: [number, number, number] = [11, 15, 25]; // Matching primary
   const lightGray: [number, number, number] = [241, 245, 249];
 
   // Helper function to check if we need a new page
@@ -47,156 +49,152 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
   };
 
   // ===== COVER PAGE =====
-  // Header band
+  // Full Dark Background
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, pageWidth, 60, 'F');
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
   
-  // Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(28);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Annual Financial Report', pageWidth / 2, 25, { align: 'center' });
-  
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'normal');
-  doc.text(companyName, pageWidth / 2, 40, { align: 'center' });
+  // Decorative Gold Line at Top
+  doc.setFillColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.rect(0, 0, pageWidth, 2, 'F');
 
-  // Report period
-  currentY = 80;
-  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-  doc.setFontSize(12);
+  // Title Section
   doc.setFont('helvetica', 'bold');
-  doc.text('Report Period', pageWidth / 2, currentY, { align: 'center' });
+  doc.setFontSize(32);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ANNUAL FINANCIAL', pageWidth / 2, 60, { align: 'center' });
+  
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.text('REPORT', pageWidth / 2, 75, { align: 'center' });
+  
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(200, 200, 200);
+  doc.text(companyName.toUpperCase(), pageWidth / 2, 95, { align: 'center' });
+
+  // Divider
+  doc.setDrawColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(pageWidth / 2 - 40, 110, pageWidth / 2 + 40, 110);
+
+  // Report Period
+  currentY = 130;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.text('REPORTING PERIOD', pageWidth / 2, currentY, { align: 'center' });
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
   currentY += 8;
   doc.text(`${analytics.yearlyMetrics.dateRange.start} - ${analytics.yearlyMetrics.dateRange.end}`, pageWidth / 2, currentY, { align: 'center' });
 
-  // Key metrics boxes
-  currentY = 110;
+  // Key metrics boxes - Redesigned for Dark Theme
+  currentY = 160;
   const boxWidth = 55;
-  const boxHeight = 35;
+  const boxHeight = 40;
   const spacing = 5;
   const startX = (pageWidth - (boxWidth * 3 + spacing * 2)) / 2;
 
+  // Box Drawing Helper
+  const drawMetricBox = (x: number, y: number, label: string, value: string, color: [number, number, number]) => {
+    // Background (Surface Color)
+    doc.setFillColor(surfaceColor[0], surfaceColor[1], surfaceColor[2]);
+    doc.setDrawColor(40, 40, 40);
+    doc.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'FD');
+    
+    // Label
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label.toUpperCase(), x + boxWidth / 2, y + 15, { align: 'center' });
+    
+    // Value
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(color[0], color[1], color[2]);
+    doc.text(value, x + boxWidth / 2, y + 28, { align: 'center' });
+  };
+
   // Total Revenue Box
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.roundedRect(startX, currentY, boxWidth, boxHeight, 3, 3, 'F');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Total Revenue', startX + boxWidth / 2, currentY + 10, { align: 'center' });
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-  doc.text(formatCurrency(analytics.yearlyMetrics.totalNetUsd, 'USD'), startX + boxWidth / 2, currentY + 22, { align: 'center' });
+  drawMetricBox(startX, currentY, 'Gross Revenue', formatCurrency(analytics.yearlyMetrics.totalExpectedUsd, 'USD'), secondaryColor);
 
   // Growth Box
-  const growthColor = analytics.yearlyMetrics.overallGrowth >= 0 ? secondaryColor : [239, 68, 68];
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.roundedRect(startX + boxWidth + spacing, currentY, boxWidth, boxHeight, 3, 3, 'F');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Overall Growth', startX + boxWidth + spacing + boxWidth / 2, currentY + 10, { align: 'center' });
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(growthColor[0], growthColor[1], growthColor[2]);
-  doc.text(`${analytics.yearlyMetrics.overallGrowth >= 0 ? '+' : ''}${analytics.yearlyMetrics.overallGrowth.toFixed(1)}%`, startX + boxWidth + spacing + boxWidth / 2, currentY + 22, { align: 'center' });
+  const growthColor = analytics.yearlyMetrics.overallGrowth >= 0 ? accentColor : [239, 68, 68];
+  const growthText = `${analytics.yearlyMetrics.overallGrowth >= 0 ? '+' : ''}${analytics.yearlyMetrics.overallGrowth.toFixed(1)}%`;
+  drawMetricBox(startX + boxWidth + spacing, currentY, 'YoY Growth', growthText, growthColor as [number, number, number]);
 
   // Transactions Box
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.roundedRect(startX + (boxWidth + spacing) * 2, currentY, boxWidth, boxHeight, 3, 3, 'F');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Transactions', startX + (boxWidth + spacing) * 2 + boxWidth / 2, currentY + 10, { align: 'center' });
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-  doc.text(analytics.yearlyMetrics.totalTransactions.toString(), startX + (boxWidth + spacing) * 2 + boxWidth / 2, currentY + 22, { align: 'center' });
+  drawMetricBox(startX + (boxWidth + spacing) * 2, currentY, 'Total Transactions', analytics.yearlyMetrics.totalTransactions.toString(), [255, 255, 255]);
 
-  // Footer
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
+
+  // Footer branding
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
   doc.setFont('helvetica', 'italic');
+  doc.text('CONFIDENTIAL - FOR INTERNAL USE ONLY', pageWidth / 2, pageHeight - 20, { align: 'center' });
   doc.text(`Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
 
-  // Add quarterly performance preview on cover
-  currentY = 165;
-  doc.setFontSize(10);
+  // Quarterly Performance Preview - Moved up slightly or adjusted
+  currentY = 220;
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-  doc.text('Quarterly Performance', pageWidth / 2, currentY, { align: 'center' });
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.text('QUARTERLY PERFORMANCE', pageWidth / 2, currentY, { align: 'center' });
   
-  // Calculate quarterly data using earningMonth
-  // Calculate quarterly data using earningMonth ONLY
+  // Calculate quarterly data (reuse logic)
   const quarters: { [key: string]: { revenue: number; count: number } } = {};
   
   transactions.forEach(t => {
-    // Strictly use earningMonth, fallback to releaseDate only if absolutely necessary and strictly parse it
     let dateStr = t.earningMonth;
-    
-    // Ensure we have a valid date string
-    if (!dateStr || dateStr === 'Unknown') {
-       dateStr = t.releaseDate;
-    }
-
+    if (!dateStr || dateStr === 'Unknown') dateStr = t.releaseDate;
     if (!dateStr) return;
     
     const date = new Date(dateStr);
-    
-    // Validate date
     if (isNaN(date.getTime())) return;
 
     const year = date.getFullYear();
-    const month = date.getMonth(); // 0-11
-    const quarter = Math.floor(month / 3) + 1; // 1-4
+    const month = date.getMonth();
+    const quarter = Math.floor(month / 3) + 1;
     const quarterKey = `Q${quarter} ${year}`;
     
-    if (!quarters[quarterKey]) {
-      quarters[quarterKey] = { revenue: 0, count: 0 };
-    }
+    if (!quarters[quarterKey]) quarters[quarterKey] = { revenue: 0, count: 0 };
     quarters[quarterKey].revenue += t.netUsd || 0;
     quarters[quarterKey].count += 1;
   });
   
-  currentY += 8;
+  currentY += 10;
   const quarterBoxWidth = 42;
   const quarterSpacing = 3;
-  const quarterKeys = Object.keys(quarters).sort().slice(-4); // Last 4 quarters, chronologically sorted
+  const quarterKeys = Object.keys(quarters).sort().slice(-4);
   const quarterStartX = (pageWidth - (quarterBoxWidth * quarterKeys.length + quarterSpacing * (quarterKeys.length - 1))) / 2;
   
   quarterKeys.forEach((quarter, idx) => {
     const data = quarters[quarter];
-    doc.setFillColor(247, 250, 252);
-    doc.roundedRect(quarterStartX + (quarterBoxWidth + quarterSpacing) * idx, currentY, quarterBoxWidth, 32, 2, 2, 'F');
+    const x = quarterStartX + (quarterBoxWidth + quarterSpacing) * idx;
     
-    // Quarter label (Q1 2023)
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    doc.text(quarter, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 7, { align: 'center' });
+    // Darker box for quarters
+    doc.setFillColor(surfaceColor[0], surfaceColor[1], surfaceColor[2]);
+    doc.setDrawColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]); 
+    doc.setLineWidth(0.1);
+    doc.roundedRect(x, currentY, quarterBoxWidth, 32, 1, 1, 'FD');
     
-    // Month range (Apr-Jun)
-    const quarterNum = parseInt(quarter.charAt(1));
-    const quarterMonths = ['Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec'][quarterNum - 1];
-    doc.setFontSize(7);
-    doc.setTextColor(120, 120, 120);
-    doc.text(quarterMonths, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 12, { align: 'center' });
+    // Quarter label
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(quarter, x + quarterBoxWidth / 2, currentY + 8, { align: 'center' });
     
     // Revenue
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.text(formatCurrency(data.revenue, 'USD'), quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 22, { align: 'center' });
-    
-    // Transaction count
-    doc.setFontSize(7);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${data.count} txns`, quarterStartX + (quarterBoxWidth + quarterSpacing) * idx + quarterBoxWidth / 2, currentY + 28, { align: 'center' });
+    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    doc.text(formatCurrency(data.revenue, 'USD'), x + quarterBoxWidth / 2, currentY + 18, { align: 'center' });
+
+    // Count
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`${data.count} txns`, x + quarterBoxWidth / 2, currentY + 26, { align: 'center' });
   });
 
   // ===== PAGE 2: EXECUTIVE SUMMARY =====
@@ -224,7 +222,7 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
 
   const highlights = [
     `Best performing month: ${analytics.bestMonth.month} (${formatCurrency(analytics.bestMonth.revenue, 'USD')})`,
-    `Average monthly revenue: ${formatCurrency(analytics.yearlyMetrics.avgMonthlyRevenue, 'USD')}`,
+    `Average monthly gross revenue: ${formatCurrency(analytics.yearlyMetrics.avgMonthlyGrossRevenue, 'USD')}`,
     `Average tax rate: ${analytics.yearlyMetrics.avgTaxPercent.toFixed(2)}%`,
     `Total transactions cleared: ${analytics.yearlyMetrics.receivedCount} of ${analytics.yearlyMetrics.totalTransactions}`,
   ];
@@ -330,7 +328,7 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
         if (data.section === 'body' && data.column.index === 2) {
           const value = data.cell.raw as string;
           if (value.startsWith('+')) {
-            data.cell.styles.textColor = secondaryColor;
+            data.cell.styles.textColor = accentColor;
             data.cell.styles.fontStyle = 'bold';
           } else if (value.startsWith('-') && value !== '-') {
             data.cell.styles.textColor = [239, 68, 68];
@@ -426,7 +424,7 @@ export const generateProfessionalPDF = async (options: PDFOptions): Promise<void
           if (Math.abs(cellValue - maxRate * 100) < 0.1) {
             data.cell.styles.fillColor = [220, 252, 231]; // Light green
             data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.textColor = secondaryColor;
+            data.cell.styles.textColor = accentColor;
           }
         }
       }

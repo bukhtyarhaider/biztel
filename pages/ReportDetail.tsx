@@ -28,7 +28,7 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   
   // Use analytics hook for calculations
-  const { totalRevenue, pendingRevenue, receivedRevenue, receivedPKR, totalTax } = useAnalytics(data);
+  const { totalGrossRevenue, pendingRevenue, receivedRevenue, receivedPKR, totalTax } = useAnalytics(data);
   
   // Use sheet sync hook
   const { syncStatus, lastSyncedAt, syncError, isLoading, syncReport, linkSheet } = useSheetSync(
@@ -127,8 +127,8 @@ const ReportDetail: React.FC<ReportDetailProps> = ({ report, onBack, onReportUpd
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <DashboardCard
           title="Gross Revenue"
-          value={formatCurrency(totalRevenue, 'USD')}
-          subValue="YTD Accumulation"
+          value={formatCurrency(totalGrossRevenue, 'USD')}
+          subValue="Total Invoiced"
           icon={<Wallet className="w-5 h-5 text-blue-400" />}
           colorClass="bg-blue-400/10 text-blue-400"
           trend="up"

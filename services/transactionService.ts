@@ -69,6 +69,15 @@ export const calculateTotalNet = (transactions: Transaction[]): number => {
 };
 
 /**
+ * Calculates total expected USD (Gross) from transactions
+ * @param transactions - Array of transactions
+ * @returns Total expected USD
+ */
+export const calculateTotalExpected = (transactions: Transaction[]): number => {
+  return transactions.reduce((acc, curr) => acc + (curr.expectedUsd || 0), 0);
+};
+
+/**
  * Calculates total revenue by status
  * @param transactions - Array of transactions
  * @param status - Status to filter by
